@@ -3,6 +3,8 @@ package org.example.group_36_project_5;
 import javafx.fxml.FXML;
 import javafx.scene.control.TextArea;
 
+import java.io.File;
+
 /**
  * ServerController handles the user interface updates on the server side for a
  * chat application.
@@ -10,6 +12,9 @@ import javafx.scene.control.TextArea;
  * the client activity log.
  */
 public class ServerController {
+
+    @FXML
+    private TextArea ListOfFilesTA;
 
     @FXML
     private TextArea ClientActivityTA; // Text area to display client activity logs
@@ -23,4 +28,18 @@ public class ServerController {
         ClientActivityTA.appendText(activity + "\n");
     }
 
+    public void appendFileList(File[] files) {
+
+        ListOfFilesTA.clear();
+
+        if (files != null) {
+            for (File file : files) {
+                if (file.isFile()) {
+                    ListOfFilesTA.appendText(file.getName() + "\n");
+                }
+            }
+        } else {
+            ListOfFilesTA.appendText("No files found in the directory.");
+        }
+    }
 }

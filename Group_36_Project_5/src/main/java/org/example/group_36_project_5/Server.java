@@ -5,6 +5,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -23,6 +24,8 @@ public class Server extends Application {
 
     private static ServerController controller;
 
+    private FileMonitor fileMonitor;
+
     @Override
     public void start(Stage primaryStage) {
 
@@ -34,9 +37,7 @@ public class Server extends Application {
             primaryStage.setScene(scene);
             primaryStage.show();
 
-            System.out.println("Gets here");
             controller = fxmlLoader.getController();
-            System.out.println("Not here");
 
             Thread serverThread = new Thread(() -> {
                 try {
@@ -48,6 +49,14 @@ public class Server extends Application {
             });
             serverThread.setDaemon(true);
             serverThread.start();
+
+            //This code is executed in the main JavaFX thread
+            String currentDir = System.getProperty("user.dir");
+            String projectPath = "/src/main/java/org/example/group_36_project_5/Files";
+            String relativePath = currentDir + File.separator + projectPath;
+
+            fileMonitor = new FileMonitor(relativePath, this);
+            fileMonitor.start();
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -85,6 +94,10 @@ public class Server extends Application {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public void updateFileList(File[] files) {
+        controller.appendFileList(files);
     }
 
     /**

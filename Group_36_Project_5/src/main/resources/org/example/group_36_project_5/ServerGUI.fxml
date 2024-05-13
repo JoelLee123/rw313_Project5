@@ -7,22 +7,36 @@
 
 <AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" style="-fx-background-color: #696969;" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.group_36_project_5.ServerController">
     <children>
-        <Label layoutX="250.0" layoutY="14.0" text="Server" textFill="WHITE">
+        <!-- Label for Server -->
+        <Label layoutX="0.0" layoutY="14.0" text="Server" textFill="WHITE" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" alignment="CENTER">
             <font>
                 <Font name="Verdana Bold" size="28.0" />
             </font>
         </Label>
-        <Label layoutX="45.0" layoutY="71.0" text="List of files" textFill="WHITE">
+
+        <!-- Label for List of Files -->
+        <Label layoutX="45.0" layoutY="71.0" text="List of Files" textFill="WHITE" alignment="CENTER">
             <font>
                 <Font name="Verdana Bold" size="18.0" />
             </font>
         </Label>
-        <Label layoutX="324.0" layoutY="71.0" text="Client Activity" textFill="WHITE">
+
+        <!-- TextArea for List of Files -->
+        <TextArea fx:id="ListOfFilesTA" editable="false" layoutX="45.0" layoutY="100.0" prefHeight="200.0" prefWidth="250.0" style="-fx-background-color: darkgray;" wrapText="true">
+            <font>
+                <Font name="Verdana" size="12.0" />
+            </font>
+        </TextArea>
+
+        <!-- Label for Client Activity -->
+        <Label layoutX="324.0" layoutY="71.0" text="Client Activity" textFill="WHITE" alignment="CENTER">
             <font>
                 <Font name="Verdana Bold" size="18.0" />
             </font>
         </Label>
-        <TextArea fx:id="ClientActivityTA" editable="false" layoutX="186.0" layoutY="100.0" prefHeight="285.0" prefWidth="401.0" style="-fx-background-color: darkgray;" wrapText="true">
+
+        <!-- TextArea for Client Activity -->
+        <TextArea fx:id="ClientActivityTA" editable="false" layoutX="324.0" layoutY="100.0" prefHeight="200.0" prefWidth="250.0" style="-fx-background-color: darkgray;" wrapText="true">
             <font>
                 <Font name="Verdana" size="12.0" />
             </font>
