@@ -13,11 +13,35 @@ public class FileTransferManager {
     private volatile boolean pauseDownloadFlag = false; // Flag to control download pausing
     private ProgressBar progressBar;
     private int port;
-    // Progress bar to update (passed during initialization or method call)
+    String uploadPath = System.getProperty("user.dir") + "/files/";
+    String downloadPath = System.getProperty("user.dir") + "/downloads/";
 
     public FileTransferManager() {
         executorService = Executors.newCachedThreadPool();
         startUploadServer();
+    }
+
+    public void pauseDownload() {
+        pauseDownloadFlag = true;
+    }
+
+    public int getPort() {
+        return port; // Retrieve the dynamically assigned port
+    }
+
+    void startUploadServer() {
+        executorService.submit(() -> {
+            try (ServerSocket serverSocket = new ServerSocket(0)) { // System-assigned port
+                this.port = serverSocket.getLocalPort();
+                System.out.println("Upload server started on dynamically assigned port: " + this.port);
+                while (!Thread.currentThread().isInterrupted()) {
+                    Socket clientSocket = serverSocket.accept();
+                    handleUploadRequest(clientSocket);
+                }
+            } catch (IOException e) {
+                System.out.println("Upload server error: " + e.getMessage());
+            }
+        });
     }
 
     /**
@@ -36,16 +60,20 @@ public class FileTransferManager {
                     DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
                     DataInputStream dis = new DataInputStream(socket.getInputStream());
                     FileOutputStream fos = new FileOutputStream(savePath)) {
-                System.out.println(savePath);
-                String relativePath = System.getProperty("user.dir") + "/files/";
-                dos.writeUTF(relativePath + fileToDownload); // Send the file request
+
+                System.out.println("save dir in downloadFile: " + savePath);
+                System.out.println("file to download: " + uploadPath + fileToDownload);
+                dos.writeUTF(uploadPath + fileToDownload); // Send the file request
+                dos.writeUTF("NORMAL");
                 dos.flush();
 
                 long fileSize = dis.readLong(); // Read file size
+                System.out.println("File size to download: " + fileSize);
                 long totalRead = 0;
                 byte[] buffer = new byte[4096];
                 int read;
                 while ((read = dis.read(buffer)) > 0) {
+                    System.out.println("here4");
                     fos.write(buffer, 0, read);
                     totalRead += read;
                     double progress = totalRead / (double) fileSize;
@@ -61,14 +89,6 @@ public class FileTransferManager {
         });
     }
 
-    public void pauseDownload() {
-        pauseDownloadFlag = true;
-    }
-
-    public int getPort() {
-        return port; // Retrieve the dynamically assigned port
-    }
-
     public void resumeDownload(String serverAddress, int serverPort, String fileToDownload, String savePath,
             long offset) {
         pauseDownloadFlag = false;
@@ -78,7 +98,8 @@ public class FileTransferManager {
                     DataInputStream dis = new DataInputStream(socket.getInputStream());
                     RandomAccessFile raf = new RandomAccessFile(savePath, "rw")) {
 
-                dos.writeUTF("RESUME");
+                dos.writeUTF(fileToDownload); // Send the file name to resume downloading
+                dos.writeUTF("RESUME"); // Indicate it's a resume request
                 dos.writeLong(offset); // Send the offset to resume from
 
                 raf.seek(offset); // Move the file pointer to the offset
@@ -105,21 +126,6 @@ public class FileTransferManager {
         });
     }
 
-    void startUploadServer() {
-        executorService.submit(() -> {
-            try (ServerSocket serverSocket = new ServerSocket(0)) { // System-assigned port
-                this.port = serverSocket.getLocalPort();
-                System.out.println("Upload server started on dynamically assigned port: " + this.port);
-                while (!Thread.currentThread().isInterrupted()) {
-                    Socket clientSocket = serverSocket.accept();
-                    handleUploadRequest(clientSocket);
-                }
-            } catch (IOException e) {
-                System.out.println("Upload server error: " + e.getMessage());
-            }
-        });
-    }
-
     /**
      * Checks if the specified file exists in the local storage.
      * 
@@ -133,10 +139,10 @@ public class FileTransferManager {
     }
 
     private void handleUploadRequest(Socket clientSocket) {
-        System.out.println("Banana");
         executorService.submit(() -> {
             try (DataOutputStream dos = new DataOutputStream(clientSocket.getOutputStream());
                     DataInputStream dis = new DataInputStream(clientSocket.getInputStream())) {
+
                 String fileName = dis.readUTF(); // Read the requested file name
                 String requestType = dis.readUTF(); // Read the type of request (NORMAL or RESUME)
 
@@ -144,8 +150,15 @@ public class FileTransferManager {
                 File fileToUpload = new File(fileName); // Ensure the correct file path is used
 
                 if (fileToUpload.exists() && !fileToUpload.isDirectory()) {
+                    // Send file size
+                    dos.writeLong(fileToUpload.length());
+                    dos.flush(); // Ensure the file size is sent before sending file data
+
                     if (requestType.equals("RESUME")) {
                         long offset = dis.readLong(); // Read the offset for resume
+                        System.out.println("Resuming upload from offset: " + offset);
+
+                        // Read and send file data from offset
                         try (RandomAccessFile raf = new RandomAccessFile(fileToUpload, "r")) {
                             raf.seek(offset);
                             byte[] buffer = new byte[4096];
@@ -155,10 +168,14 @@ public class FileTransferManager {
                             }
                         }
                     } else {
+                        System.out.println("Starting normal file upload.");
+
+                        // Read and send file data from beginning
                         try (FileInputStream fis = new FileInputStream(fileToUpload)) {
                             byte[] buffer = new byte[4096];
                             int read;
                             while ((read = fis.read(buffer)) > 0) {
+                                System.out.println("here3");
                                 dos.write(buffer, 0, read);
                             }
                         }
