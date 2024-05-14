@@ -36,7 +36,7 @@ public class FileTransferManager {
                     DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
                     DataInputStream dis = new DataInputStream(socket.getInputStream());
                     FileOutputStream fos = new FileOutputStream(savePath)) {
-
+                System.out.println(savePath);
                 String relativePath = System.getProperty("user.dir") + "/files/";
                 dos.writeUTF(relativePath + fileToDownload); // Send the file request
                 dos.flush();
@@ -133,23 +133,36 @@ public class FileTransferManager {
     }
 
     private void handleUploadRequest(Socket clientSocket) {
+        System.out.println("Banana");
         executorService.submit(() -> {
             try (DataOutputStream dos = new DataOutputStream(clientSocket.getOutputStream());
                     DataInputStream dis = new DataInputStream(clientSocket.getInputStream())) {
                 String fileName = dis.readUTF(); // Read the requested file name
+                String requestType = dis.readUTF(); // Read the type of request (NORMAL or RESUME)
 
-                File fileToUpload = new File(fileName);
-                System.out.println(fileName);
+                System.out.println("filename in handleUploadRequest(): " + fileName);
+                File fileToUpload = new File(fileName); // Ensure the correct file path is used
 
                 if (fileToUpload.exists() && !fileToUpload.isDirectory()) {
-
-                    FileInputStream fis = new FileInputStream(fileToUpload);
-                    byte[] buffer = new byte[4096];
-                    int read;
-                    while ((read = fis.read(buffer)) > 0) {
-                        dos.write(buffer, 0, read);
+                    if (requestType.equals("RESUME")) {
+                        long offset = dis.readLong(); // Read the offset for resume
+                        try (RandomAccessFile raf = new RandomAccessFile(fileToUpload, "r")) {
+                            raf.seek(offset);
+                            byte[] buffer = new byte[4096];
+                            int read;
+                            while ((read = raf.read(buffer)) > 0) {
+                                dos.write(buffer, 0, read);
+                            }
+                        }
+                    } else {
+                        try (FileInputStream fis = new FileInputStream(fileToUpload)) {
+                            byte[] buffer = new byte[4096];
+                            int read;
+                            while ((read = fis.read(buffer)) > 0) {
+                                dos.write(buffer, 0, read);
+                            }
+                        }
                     }
-                    fis.close();
                 } else {
                     System.out.println("Requested file does not exist: " + fileName);
                 }
@@ -164,4 +177,5 @@ public class FileTransferManager {
             }
         });
     }
+
 }
