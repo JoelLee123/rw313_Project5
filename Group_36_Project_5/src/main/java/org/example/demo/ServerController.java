@@ -1,4 +1,4 @@
-package org.example.group_36_project_5;
+package org.example.demo;
 
 import javafx.fxml.FXML;
 import javafx.scene.control.TextArea;

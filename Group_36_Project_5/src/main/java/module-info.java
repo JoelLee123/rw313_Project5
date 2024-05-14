@@ -3,6 +3,6 @@ module org.example.group_36_project_5 {
     requires javafx.fxml;
 
 
-    opens org.example.group_36_project_5 to javafx.fxml;
-    exports org.example.group_36_project_5;
+    opens org.example.demo to javafx.fxml;
+    exports org.example.demo;
 }

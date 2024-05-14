@@ -1,4 +1,4 @@
-package org.example.group_36_project_5;
+package org.example.demo;
 
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
@@ -21,16 +21,16 @@ public class Server extends Application {
 
     private ServerSocket serverSocket;
     public static Set<String> activeUsernames = ConcurrentHashMap.newKeySet();
-
     private static ServerController controller;
+    public static SearchManager searchManager;
 
     private FileMonitor fileMonitor;
 
     @Override
     public void start(Stage primaryStage) {
-
         try {
-            System.out.println("Gets here");
+            // Initialize SearchManager with the folder path
+            searchManager = new SearchManager("Group_36_Project_1/files");
             FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("ServerGUI.fxml"));
             Scene scene = new Scene(fxmlLoader.load());
             primaryStage.setTitle("Server");
@@ -41,8 +41,8 @@ public class Server extends Application {
 
             Thread serverThread = new Thread(() -> {
                 try {
-                    serverSocket = new ServerSocket(4044); // Create a server socket on port 4044
-                    startServer(); // Start the server
+                    serverSocket = new ServerSocket(4044);
+                    startServer();
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -62,7 +62,6 @@ public class Server extends Application {
             e.printStackTrace();
         }
     }
-
 
     /**
      * Starts the server and listens for incoming client connections.

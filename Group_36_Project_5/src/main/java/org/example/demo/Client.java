@@ -1,4 +1,4 @@
-package org.example.group_36_project_5;
+package org.example.demo;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -25,6 +25,9 @@ public class Client extends Application {
     private String username;
     private ChatGuiController controller;
     public Stage chatStage;
+    private FileTransferManager fileTransferManager; // Each client has its own FileTransferManager
+    private String serverAddress;
+    private int serverPort;
 
     /**
      * Constructs a Client instance with a specified socket, username, and
@@ -34,14 +37,16 @@ public class Client extends Application {
      * @param username   The username of the client.
      * @param controller The controller for the chat GUI.
      */
-    public Client(Socket socket, String username, ChatGuiController controller) {
-        this.controller = controller;
+    public Client(Socket socket, String username, ChatGuiController controller, String serverAddress) {
+        this.fileTransferManager = new FileTransferManager();
         try {
+            this.controller = controller;
             this.socket = socket;
             this.objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
             this.objectOutputStream.flush();
             this.objectInputStream = new ObjectInputStream(socket.getInputStream());
             this.username = username;
+            this.serverAddress = serverAddress;
 
             // Send the username as a Message object to the server
             sendMessage(new Message("login", username, null, username));
@@ -55,6 +60,18 @@ public class Client extends Application {
      * Default constructor for Client.
      */
     public Client() {
+    }
+
+    public FileTransferManager getFileTransferManager() {
+        return fileTransferManager;
+    }
+
+    public String getServerAddress() {
+        return serverAddress;
+    }
+
+    public int getServerPort() {
+        return serverPort;
     }
 
     /**
@@ -71,42 +88,100 @@ public class Client extends Application {
         }
     }
 
-    /**
-     * Listens for messages from the server and handles them accordingly.
-     */
     public void listenForMessage() {
         new Thread(() -> {
-            Message messageFromServer;
             while (socket.isConnected()) {
                 try {
-                    messageFromServer = (Message) objectInputStream.readObject();
+                    Message messageFromServer = (Message) objectInputStream.readObject();
                     if (messageFromServer != null) {
-                        if (messageFromServer.getContent().equals("Username is already taken.")) {
-                            // Restart the client
-                            Platform.runLater(() -> {
-                                try {
-                                    closeEverything(socket, objectInputStream, objectOutputStream);
-                                    restartClient(username);
-                                } catch (IOException e) {
-                                    e.printStackTrace();
-                                }
-                            });
-                            stop();
-                            return;
+                        switch (messageFromServer.getType()) {
+                            case "usernameTaken":
+                                handleUsernameTaken();
+                                break;
+                            case "searchResults":
+                                handleSearchResults(messageFromServer.getContent());
+                                break;
+                            case "initiateDownloadFrom":
+                                handleInitiateDownloadFrom(messageFromServer);
+                            case "checkFile":
+                                handleCheckFileRequest(messageFromServer);
+                                break;
+                            default:
+                                System.out.println("Unhandled message type: " + messageFromServer.getType());
+                                break;
                         }
-                        controller.displayMessage(messageFromServer);
                     } else {
-                        closeEverything(socket, objectInputStream, objectOutputStream);
-                        System.out.println("SERVER: Server down, disconnecting clients...");
-                        System.exit(0);
-                        break;
+                        handleServerDown();
                     }
-                } catch (Exception e) {
-                    closeEverything(socket, objectInputStream, objectOutputStream);
+                } catch (IOException | ClassNotFoundException e) {
+                    handleException(e.getMessage());
                     break;
                 }
             }
         }).start();
+    }
+
+    private void handleCheckFileRequest(Message message) {
+        String filename = message.getContent();
+        if (fileTransferManager.hasFile(filename)) {
+            System.out.println("check file in client");
+            sendMessage(new Message("fileAvailable", username, message.getRecipient(),
+                    filename + ":" + fileTransferManager.getPort()));
+        }
+    }
+
+    private void handleInitiateDownloadFrom(Message message) {
+        String[] contentParts = message.getContent().split(":"); // Assuming the format is "filename:port"
+        if (contentParts.length < 2) {
+            System.out.println("Invalid download initiation message format.");
+            return;
+        }
+        String filename = contentParts[0];
+        int port = Integer.parseInt(contentParts[1]); // Make sure to handle potential NumberFormatException
+        System.out.println(filename + ": " + port + ": " + getServerAddress());
+
+        Platform.runLater(() -> {
+            try {
+                fileTransferManager.downloadFile(getServerAddress(), port, filename,
+                        "Group_36_Project_1/filesDownload" + filename, controller.getProgressBar());
+            } catch (Exception e) {
+                showAlert("Download Failed", "Failed to initiate download for " + filename + ": " + e.getMessage());
+            }
+        });
+    }
+
+    public void sendSearchRequest(String query) {
+        sendMessage(new Message("search", username, null, query));
+    }
+
+    private void handleUsernameTaken() {
+        Platform.runLater(() -> {
+            try {
+                closeEverything(socket, objectInputStream, objectOutputStream);
+                restartClient(username);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
+    }
+
+    private void handleSearchResults(String results) {
+        Platform.runLater(() -> controller.displaySearchResults(results));
+    }
+
+    private void handleServerDown() {
+        Platform.runLater(() -> {
+            closeEverything(socket, objectInputStream, objectOutputStream);
+            System.out.println("SERVER: Server down, disconnecting clients...");
+            System.exit(0);
+        });
+    }
+
+    private void handleException(String errorMessage) {
+        Platform.runLater(() -> {
+            closeEverything(socket, objectInputStream, objectOutputStream);
+            System.out.println("Error: " + errorMessage);
+        });
     }
 
     /**
@@ -162,6 +237,16 @@ public class Client extends Application {
         stage.setTitle("Login");
         stage.setScene(scene);
         stage.show();
+    }
+
+    private void showAlert(String title, String content) {
+        Platform.runLater(() -> {
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle(title);
+            alert.setHeaderText(null);
+            alert.setContentText(content);
+            alert.showAndWait();
+        });
     }
 
     /**
