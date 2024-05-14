@@ -48,8 +48,6 @@ public class Client extends Application {
             this.username = username;
             this.serverAddress = serverAddress;
 
-            reportPortToServer();
-
             // Send the username as a Message object to the server
             sendMessage(new Message("login", username, null, username));
             listenForMessage();
@@ -74,13 +72,6 @@ public class Client extends Application {
 
     public int getServerPort() {
         return serverPort;
-    }
-
-    private void reportPortToServer() {
-        Message portMessage = new Message("reportPort", username, null,
-                String.valueOf(fileTransferManager.getPort()));
-        sendMessage(portMessage);
-
     }
 
     /**

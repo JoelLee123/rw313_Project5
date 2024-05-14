@@ -98,8 +98,9 @@ public class ClientHandler implements Runnable {
 
     private void handleFileAvailable(Message message) {
         System.out.println("start init download method");
+        System.out.println(message.getSender());
         // Find the client who requested the file download
-        ClientHandler requester = findClientHandler(message.getRecipient());
+        ClientHandler requester = findClientHandler(message.getSender());
         if (requester != null) {
             System.out.println("initiating download");
             requester.sendMessage(new Message("initiateDownloadFrom", clientUsername, null, message.getContent()));
@@ -108,6 +109,7 @@ public class ClientHandler implements Runnable {
 
     private ClientHandler findClientHandler(String username) {
         for (ClientHandler handler : clientHandlers) {
+            System.out.println(handler.clientUsername);
             if (handler.clientUsername.equals(username)) {
                 return handler;
             }
