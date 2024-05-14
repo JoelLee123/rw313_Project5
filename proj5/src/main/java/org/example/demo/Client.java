@@ -5,9 +5,6 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.UUID;
-
-import org.example.group_36_project_5.Encryption;
-
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
@@ -138,7 +135,6 @@ public class Client extends Application {
             sendMessage(new Message("fileAvailable", username, message.getRecipient(),
                     filename + ":" + fileTransferManager.getPort(), encryptedMessageKey));
 
-
             sendMessage(new Message("fileAvailable", username, message.getRecipient(),
                     filename + ":" + fileTransferManager.getPort(), encryptedMessageKey));
         }
@@ -154,7 +150,7 @@ public class Client extends Application {
         int port = Integer.parseInt(contentParts[1]);
         String decryptedMessageKey = message.getMessageKey();
         System.out.println(decryptedMessageKey);
-    
+
         if (decryptedMessageKey.equals(originalMessageKey)) {
             Platform.runLater(() -> {
                 try {
@@ -171,7 +167,7 @@ public class Client extends Application {
     }
 
     public void sendSearchRequest(String query) {
-        sendMessage(new Message("search", username, null, query,""));
+        sendMessage(new Message("search", username, null, query, ""));
     }
 
     private void handleUsernameTaken() {
@@ -197,7 +193,7 @@ public class Client extends Application {
         });
     }
 
-        private String generateRandomMessageKey() {
+    private String generateRandomMessageKey() {
         // Implement your logic to generate a random message key
         // For example, you can use UUID or a random string generator
         // Here's a simple example using UUID:

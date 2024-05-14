@@ -90,7 +90,7 @@ public class ChatGuiController extends Application {
         if (selectedItem != null) {
             System.out.println("selectedItem is not null");
             // Send a download request to the server
-            Message downloadRequest = new Message("downloadRequest", username, username, selectedItem);
+            Message downloadRequest = new Message("downloadRequest", username, username, selectedItem, "");
             client.sendMessage(downloadRequest);
         }
     }

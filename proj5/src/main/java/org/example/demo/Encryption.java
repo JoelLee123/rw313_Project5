@@ -1,4 +1,4 @@
-package org.example.group_36_project_5;
+package org.example.demo;
 
 public class Encryption {
     private static final String ALPHABET = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
