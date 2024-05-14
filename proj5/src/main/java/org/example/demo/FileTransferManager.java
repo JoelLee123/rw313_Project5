@@ -13,6 +13,8 @@ public class FileTransferManager {
     private volatile boolean pauseDownloadFlag = false; // Flag to control download pausing
     private ProgressBar progressBar;
     private int port;
+
+
     String uploadPath = System.getProperty("user.dir") + "/files/";
     String downloadPath = System.getProperty("user.dir") + "/downloads/";
 

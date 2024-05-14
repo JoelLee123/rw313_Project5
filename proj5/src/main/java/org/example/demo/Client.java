@@ -94,10 +94,21 @@ public class Client extends Application {
                 try {
                     Message messageFromServer = (Message) objectInputStream.readObject();
                     if (messageFromServer != null) {
+                        if (messageFromServer.getContent().equals("Username is already taken.")) {
+                            // Restart the client
+                            Platform.runLater(() -> {
+                                try {
+                                    closeEverything(socket, objectInputStream, objectOutputStream);
+                                    restartClient(username); // restart the client if username has been taken
+                                } catch (IOException e) {
+                                    e.printStackTrace();
+                                }
+                            });
+                            stop();
+                            return;
+                        }
+
                         switch (messageFromServer.getType()) {
-                            case "usernameTaken":
-                                handleUsernameTaken();
-                                break;
                             case "searchResults":
                                 handleSearchResults(messageFromServer.getContent());
                                 break;
@@ -113,7 +124,7 @@ public class Client extends Application {
                     } else {
                         handleServerDown();
                     }
-                } catch (IOException | ClassNotFoundException e) {
+                } catch (Exception e) {
                     handleException(e.getMessage());
                     break;
                 }
