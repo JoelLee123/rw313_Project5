@@ -21,6 +21,8 @@ public class SearchManager {
             System.out.println("No files found or not a directory");
         } else {
             System.out.println("Number of files found: " + fileList.length);
+
+
         }
     }
 
