@@ -6,7 +6,6 @@ import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 /**
  * The ClientHandler class is responsible for managing individual client
@@ -110,8 +109,10 @@ public class ClientHandler implements Runnable {
         }
         String filename = contentParts[0];
         int port = Integer.parseInt(contentParts[1]);
+        
         String encryptedMessageKey = message.getMessageKey();
         String decryptedMessageKey = Encryption.decrypt(encryptedMessageKey);
+        System.out.println("decrypted key: " + decryptedMessageKey);
     
         ClientHandler recipient = findClientHandler(message.getRecipient());
         if (recipient != null) {

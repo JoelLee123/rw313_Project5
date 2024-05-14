@@ -130,10 +130,12 @@ public class Client extends Application {
             System.out.println("check file in client");
 
             originalMessageKey = generateRandomMessageKey(); // Generate a unique message key
-            System.out.println(originalMessageKey);
+            
+            System.out.println("original key: " + originalMessageKey);
+
             String encryptedMessageKey = Encryption.encrypt(originalMessageKey);
-            sendMessage(new Message("fileAvailable", username, message.getRecipient(),
-                    filename + ":" + fileTransferManager.getPort(), encryptedMessageKey));
+
+            System.out.println("encrypted key: " + encryptedMessageKey); 
 
             sendMessage(new Message("fileAvailable", username, message.getRecipient(),
                     filename + ":" + fileTransferManager.getPort(), encryptedMessageKey));
@@ -149,7 +151,7 @@ public class Client extends Application {
         String filename = contentParts[0];
         int port = Integer.parseInt(contentParts[1]);
         String decryptedMessageKey = message.getMessageKey();
-        System.out.println(decryptedMessageKey);
+        System.out.println("decrypted key:" + decryptedMessageKey);
 
         if (decryptedMessageKey.equals(originalMessageKey)) {
             Platform.runLater(() -> {
