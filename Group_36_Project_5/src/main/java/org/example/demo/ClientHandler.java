@@ -82,6 +82,7 @@ public class ClientHandler implements Runnable {
     }
 
     private void handleSearchRequest(Message message) {
+        System.out.println("Message content: " + message.getContent());
         List<String> searchResults = Server.searchManager.searchFiles(message.getContent());
         sendMessage(new Message("searchResults", "SERVER", clientUsername, String.join(", ", searchResults)));
     }

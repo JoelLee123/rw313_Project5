@@ -64,6 +64,7 @@ public class ChatGuiController extends Application {
     public void initialize() {
         btnSearch.setOnAction(event -> handleSearchButton());
         // Custom cell factory to format list cells
+        System.out.println("Search button was clicked");
         searchResultsListView.setCellFactory(new Callback<ListView<String>, ListCell<String>>() {
             @Override
             public ListCell<String> call(ListView<String> param) {

@@ -30,7 +30,12 @@ public class Server extends Application {
     public void start(Stage primaryStage) {
         try {
             // Initialize SearchManager with the folder path
-            searchManager = new SearchManager("Group_36_Project_1/files");
+            //System independent absolute path - this will only check your specific PC atm
+            String currentDir = System.getProperty("user.dir");
+            //String projectPath = "/src/main/java/org/example/demo/files";
+            String relativePath = currentDir + "/files";
+
+            searchManager = new SearchManager(relativePath);
             FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("ServerGUI.fxml"));
             Scene scene = new Scene(fxmlLoader.load());
             primaryStage.setTitle("Server");
@@ -51,10 +56,6 @@ public class Server extends Application {
             serverThread.start();
 
             //This code is executed in the main JavaFX thread
-            String currentDir = System.getProperty("user.dir");
-            String projectPath = "/src/main/java/org/example/group_36_project_5/Files";
-            String relativePath = currentDir + File.separator + projectPath;
-
             fileMonitor = new FileMonitor(relativePath, this);
             fileMonitor.start();
 

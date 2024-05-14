@@ -25,7 +25,8 @@ public class FileMonitor extends Thread {
             }
 
             try {
-                Thread.sleep(5000); // Check for changes every 5 seconds
+                //Low number causes a crash
+                Thread.sleep(15000); // Check for changes every 15 seconds
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
