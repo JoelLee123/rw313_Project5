@@ -87,7 +87,7 @@ public class ChatGuiController extends Application {
         String selectedItem = searchResultsListView.getSelectionModel().getSelectedItem();
         if (selectedItem != null) {
             // Send a download request to the server
-            Message downloadRequest = new Message("downloadRequest", username, null, selectedItem);
+            Message downloadRequest = new Message("downloadRequest", username, username, selectedItem);
             client.sendMessage(downloadRequest);
         }
     }

@@ -91,7 +91,8 @@ public class ClientHandler implements Runnable {
         for (ClientHandler clientHandler : clientHandlers) {
             if (!clientHandler.clientUsername.equals(this.clientUsername)) {
                 System.out.println("download request in client handler");
-                clientHandler.sendMessage(new Message("checkFile", clientUsername, null, requestedFile));
+                clientHandler
+                        .sendMessage(new Message("checkFile", clientUsername, message.getRecipient(), requestedFile));
             }
         }
     }
@@ -100,10 +101,10 @@ public class ClientHandler implements Runnable {
         System.out.println("start init download method");
         System.out.println(message.getSender());
         // Find the client who requested the file download
-        ClientHandler requester = findClientHandler(message.getSender());
-        if (requester != null) {
+        ClientHandler recipient = findClientHandler(message.getRecipient());
+        if (recipient != null) {
             System.out.println("initiating download");
-            requester.sendMessage(new Message("initiateDownloadFrom", clientUsername, null, message.getContent()));
+            recipient.sendMessage(new Message("initiateDownloadFrom", clientUsername, null, message.getContent()));
         }
     }
 

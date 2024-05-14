@@ -125,7 +125,8 @@ public class Client extends Application {
         String filename = message.getContent();
         if (fileTransferManager.hasFile(filename)) {
             System.out.println("check file in client");
-            sendMessage(new Message("fileAvailable", username, null, filename + ":" + fileTransferManager.getPort()));
+            sendMessage(new Message("fileAvailable", username, message.getRecipient(),
+                    filename + ":" + fileTransferManager.getPort()));
         }
     }
 
