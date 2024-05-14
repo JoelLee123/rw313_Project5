@@ -29,10 +29,7 @@ public class Server extends Application {
     @Override
     public void start(Stage primaryStage) {
         try {
-            // Initialize SearchManager with the folder path
-            // System independent absolute path - this will only check your specific PC atm
             String currentDir = System.getProperty("user.dir");
-            // String projectPath = "/src/main/java/org/example/demo/files";
             String relativePath = currentDir + "/files";
 
             searchManager = new SearchManager(relativePath);

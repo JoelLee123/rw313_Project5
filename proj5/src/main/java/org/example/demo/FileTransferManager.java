@@ -37,7 +37,8 @@ public class FileTransferManager {
                     DataInputStream dis = new DataInputStream(socket.getInputStream());
                     FileOutputStream fos = new FileOutputStream(savePath)) {
 
-                dos.writeUTF(fileToDownload); // Send the file request
+                String relativePath = System.getProperty("user.dir") + "/files/";
+                dos.writeUTF(relativePath + fileToDownload); // Send the file request
                 dos.flush();
 
                 long fileSize = dis.readLong(); // Read file size
@@ -110,9 +111,7 @@ public class FileTransferManager {
                 this.port = serverSocket.getLocalPort();
                 System.out.println("Upload server started on dynamically assigned port: " + this.port);
                 while (!Thread.currentThread().isInterrupted()) {
-                    System.out.println("Start of loop loop");
                     Socket clientSocket = serverSocket.accept();
-                    System.out.println("In the while loop");
                     handleUploadRequest(clientSocket);
                 }
             } catch (IOException e) {
@@ -134,15 +133,16 @@ public class FileTransferManager {
     }
 
     private void handleUploadRequest(Socket clientSocket) {
-        System.out.println("Banana");
         executorService.submit(() -> {
             try (DataOutputStream dos = new DataOutputStream(clientSocket.getOutputStream());
                     DataInputStream dis = new DataInputStream(clientSocket.getInputStream())) {
                 String fileName = dis.readUTF(); // Read the requested file name
-                System.out.println("filename in handleUploadRequest(): " + fileName);
 
                 File fileToUpload = new File(fileName);
+                System.out.println(fileName);
+
                 if (fileToUpload.exists() && !fileToUpload.isDirectory()) {
+
                     FileInputStream fis = new FileInputStream(fileToUpload);
                     byte[] buffer = new byte[4096];
                     int read;

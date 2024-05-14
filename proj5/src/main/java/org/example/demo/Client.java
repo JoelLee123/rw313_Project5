@@ -94,20 +94,6 @@ public class Client extends Application {
                 try {
                     Message messageFromServer = (Message) objectInputStream.readObject();
                     if (messageFromServer != null) {
-
-                        if (messageFromServer.getContent().equals("Username is already taken.")) {
-                            //Restart the client
-                            Platform.runLater(() -> {
-                                try {
-                                    closeEverything(socket, objectInputStream, objectOutputStream);
-                                    restartClient(username); // restart the client if username has been taken
-                                } catch (IOException e) {
-                                    e.printStackTrace();
-                                }
-                            });
-                            stop();
-                            return;
-                        }
                         switch (messageFromServer.getType()) {
                             case "usernameTaken":
                                 handleUsernameTaken();
@@ -127,7 +113,7 @@ public class Client extends Application {
                     } else {
                         handleServerDown();
                     }
-                } catch (Exception e) {
+                } catch (IOException | ClassNotFoundException e) {
                     handleException(e.getMessage());
                     break;
                 }
@@ -157,8 +143,9 @@ public class Client extends Application {
 
         Platform.runLater(() -> {
             try {
+                String relativePath = System.getProperty("user.dir") + "/downloads/";
                 fileTransferManager.downloadFile(getServerAddress(), port, filename,
-                        "downloads/" + filename, controller.getProgressBar());
+                        relativePath + filename, controller.getProgressBar());
             } catch (Exception e) {
                 showAlert("Download Failed", "Failed to initiate download for " + filename + ": " + e.getMessage());
             }
