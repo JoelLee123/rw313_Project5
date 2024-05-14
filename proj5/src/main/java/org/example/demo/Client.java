@@ -4,6 +4,9 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+
+import org.example.group_36_project_5.Encryption;
+
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
@@ -125,8 +128,15 @@ public class Client extends Application {
         String filename = message.getContent();
         if (fileTransferManager.hasFile(filename)) {
             System.out.println("check file in client");
+            String encryptedString = message.getMessageKey();
+            String decrytedString = Encryption.decrypt(encryptedString);
+
+            //decrypt
+
+
+
             sendMessage(new Message("fileAvailable", username, message.getRecipient(),
-                    filename + ":" + fileTransferManager.getPort()));
+                    filename + ":" + fileTransferManager.getPort(), decrytedString));
         }
     }
 
