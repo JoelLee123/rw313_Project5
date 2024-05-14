@@ -34,10 +34,10 @@ public class MainController {
      */
     public void btnJoinServerClicked(ActionEvent event) throws Exception {
         String username = InputUsername.getText().trim();
-        String ip = InputIP.getText().trim();
+        String serverAddress = InputIP.getText().trim();
 
         try {
-            Socket socket = new Socket(ip, 4044);
+            Socket socket = new Socket(serverAddress, 4044);
             Stage stage2 = new Stage();
 
             stage2.setTitle("Messenger");
@@ -49,7 +49,7 @@ public class MainController {
             stage2.show();
 
             ChatGuiController controller = fxmlLoader2.getController();
-            Client client = new Client(socket, username, controller);
+            Client client = new Client(socket, username, controller, serverAddress);
 
             controller.setClient(client);
             controller.setUsername(username);

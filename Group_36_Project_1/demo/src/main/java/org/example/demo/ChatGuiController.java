@@ -2,11 +2,14 @@ package org.example.demo;
 
 import javafx.application.Application;
 import javafx.application.Platform;
-import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
-import javafx.scene.control.TextArea;
+import javafx.scene.control.ListCell;
 import javafx.stage.Stage;
+import javafx.scene.control.ListView;
+import javafx.scene.control.ProgressBar;
+import javafx.util.Callback;
+import javafx.scene.control.TextField;
 
 /**
  * The ChatGuiController class is responsible for handling the user interface
@@ -16,13 +19,13 @@ public class ChatGuiController extends Application {
     private String username;
     private Client client;
     @FXML
-    private TextArea InputMessage;
+    private TextField searchInput;
     @FXML
-    private TextArea TextAreaNames;
+    private ListView<String> searchResultsListView;
     @FXML
-    private TextArea MessageOutput;
+    private Button btnSearch, btnDownload;
     @FXML
-    private Button btnSendMessage;
+    private ProgressBar downloadProgress;
 
     /**
      * Default constructor for ChatGuiController.
@@ -58,49 +61,71 @@ public class ChatGuiController extends Application {
         this.client = client;
     }
 
-    /**
-     * Handles the action of the "Send Message" button being clicked.
-     * It sends the message to the server and displays it in the chat window.
-     *
-     * @param event The event that triggered the method call.
-     */
-    @FXML
-    void btnSendMessageClicked(ActionEvent event) {
-        String messageText = InputMessage.getText();
-        Message message;
-
-        if ("/leave".equalsIgnoreCase(messageText.trim())) {
-            message = new Message("command", username, null, "/leave");
-            this.displayMessage(message);
-
-        } else if (messageText.startsWith("/w ")) {
-            String[] parts = messageText.split(" ", 3);
-            if (parts.length >= 3) {
-                String recipient = parts[1];
-                messageText = parts[2];
-                message = new Message("private", username, recipient, messageText.trim());
-                this.client.sendMessage(message);
-                this.displayMessage(message);
+    public void initialize() {
+        btnSearch.setOnAction(event -> handleSearchButton());
+        // Custom cell factory to format list cells
+        searchResultsListView.setCellFactory(new Callback<ListView<String>, ListCell<String>>() {
+            @Override
+            public ListCell<String> call(ListView<String> param) {
+                return new ListCell<String>() {
+                    @Override
+                    protected void updateItem(String item, boolean empty) {
+                        super.updateItem(item, empty);
+                        if (item == null || empty) {
+                            setText(null);
+                        } else {
+                            setText(formatSearchResult(item));
+                        }
+                    }
+                };
             }
+        });
+    }
 
-        } else if (!messageText.trim().isEmpty()) {
-            message = new Message("broadcast", username, null, messageText.trim());
-            this.client.sendMessage(message);
-            this.displayMessage(message);
+    @FXML
+    private void handleDownloadButton() {
+        String selectedItem = searchResultsListView.getSelectionModel().getSelectedItem();
+        if (selectedItem != null) {
+            // Send a download request to the server
+            Message downloadRequest = new Message("downloadRequest", username, null, selectedItem);
+            client.sendMessage(downloadRequest);
         }
-        InputMessage.clear();
+    }
+
+    @FXML
+    private void handleSearchButton() {
+        String query = searchInput.getText().trim();
+        if (!query.isEmpty()) {
+            client.sendSearchRequest(query); // Send the search query to the server
+            searchInput.clear(); // Clear the input field after sending the request
+        }
     }
 
     /**
-     * Displays a message in the chat window.
-     *
-     * @param message The message to be displayed.
+     * Returns the progress bar used for showing file download progress.
+     * 
+     * @return ProgressBar the progress bar control.
      */
-    public void displayMessage(Message message) {
+    public ProgressBar getProgressBar() {
+        return downloadProgress;
+    }
+
+    public void displaySearchResults(String results) {
         Platform.runLater(() -> {
-            String formattedMessage = formatMessage(message);
-            MessageOutput.appendText(formattedMessage + "\n");
+            searchResultsListView.getItems().clear();
+            btnSearch.setDisable(false); // Re-enable the button
+            if (results != null && !results.isEmpty()) {
+                searchResultsListView.getItems().addAll(results.split(", "));
+            } else {
+                searchResultsListView.getItems().add("No results found.");
+            }
         });
+    }
+
+    // Format search result string for display
+    private String formatSearchResult(String result) {
+        // You can format the string however you need; this is a simple example
+        return "File: " + result;
     }
 
     /**
@@ -114,32 +139,4 @@ public class ChatGuiController extends Application {
         throw new UnsupportedOperationException("Unimplemented method 'start'");
     }
 
-
-    /**
-     * Formats a message for display in the chat window.
-     *
-     * @param message The message to format.
-     * @return A formatted string representation of the message.
-     */
-    private String formatMessage(Message message) {
-        String formattedMessage = "";
-        if (message.getType().equals("broadcast")) {
-            if (message.getSender().equals(username)) {
-                formattedMessage = "[You] " + message.getContent();
-            } else {
-                formattedMessage = "[" + message.getSender() + "] " + message.getContent();
-            }
-        } else if (message.getType().equals("private")) {
-            if (message.getSender().equals(username)) {
-                formattedMessage = "[You] (whisper to " + message.getRecipient() + ") " + message.getContent();
-            } else {
-                formattedMessage = "[" + message.getSender() + "] (whisper) " + message.getContent();
-            }
-        } else if (message.getType().equals("command") && message.getContent().equalsIgnoreCase("/leave")) {
-            formattedMessage = "You have left the chat.";
-            this.client.closeEverythingHelper();
-            Platform.exit();
-        }
-        return formattedMessage;
-    }
 }

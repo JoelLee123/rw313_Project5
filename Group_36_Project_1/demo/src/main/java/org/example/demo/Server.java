@@ -4,7 +4,6 @@ import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
-
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -20,28 +19,26 @@ public class Server extends Application {
 
     private ServerSocket serverSocket;
     public static Set<String> activeUsernames = ConcurrentHashMap.newKeySet();
-
     private static ServerController controller;
+    public static SearchManager searchManager;
 
     @Override
     public void start(Stage primaryStage) {
-
         try {
-            System.out.println("Gets here");
+            // Initialize SearchManager with the folder path
+            searchManager = new SearchManager("Group_36_Project_1/files");
             FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("ServerGUI.fxml"));
             Scene scene = new Scene(fxmlLoader.load());
             primaryStage.setTitle("Server");
             primaryStage.setScene(scene);
             primaryStage.show();
 
-            System.out.println("Gets here");
             controller = fxmlLoader.getController();
-            System.out.println("Not here");
 
             Thread serverThread = new Thread(() -> {
                 try {
-                    serverSocket = new ServerSocket(4044); // Create a server socket on port 4044
-                    startServer(); // Start the server
+                    serverSocket = new ServerSocket(4044);
+                    startServer();
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -53,7 +50,6 @@ public class Server extends Application {
             e.printStackTrace();
         }
     }
-
 
     /**
      * Starts the server and listens for incoming client connections.

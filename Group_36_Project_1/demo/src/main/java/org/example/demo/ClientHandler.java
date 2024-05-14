@@ -5,11 +5,11 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * The ClientHandler class is responsible for managing individual client
- * connections
- * to the server, including sending and receiving messages.
+ * connections to the server, including sending and receiving messages.
  */
 public class ClientHandler implements Runnable {
     public static ArrayList<ClientHandler> clientHandlers = new ArrayList<>();
@@ -35,20 +35,16 @@ public class ClientHandler implements Runnable {
             this.clientUsername = usernameMessage.getContent();
 
             if (!Server.activeUsernames.add(this.clientUsername)) {
-                objectOutputStream.writeObject(new Message("login", "SERVER", null, "Username is already taken."));
-                objectOutputStream.flush();
-                Server.activeUsernames.remove(this.clientUsername);
-                closeEverything(socket, objectInputStream, objectOutputStream);
+                sendMessage(new Message("login", "SERVER", null, "Username is already taken."));
+                closeEverything();
                 return;
             }
 
             clientHandlers.add(this);
             Server.activeUsernames.add(this.clientUsername);
-            System.out.println(clientUsername + " has connected.");
-            broadcastMessage(new Message("broadcast", "SERVER", null, clientUsername + " has entered the chat."));
 
         } catch (IOException | ClassNotFoundException e) {
-            closeEverything(socket, objectInputStream, objectOutputStream);
+            closeEverything();
         }
     }
 
@@ -57,107 +53,91 @@ public class ClientHandler implements Runnable {
      */
     @Override
     public void run() {
-        Message messageFromClient;
-
-        while (socket.isConnected()) {
-            try {
+        try {
+            Message messageFromClient;
+            while (socket.isConnected()) {
                 messageFromClient = (Message) objectInputStream.readObject();
-                if (messageFromClient.getContent().equals("/leave") || messageFromClient == null) {
-                    System.out.println(clientUsername + " has disconnected!");
-                    broadcastMessage(new Message("broadcast", "SERVER", null, clientUsername + " has left the chat."));
-                    break;
-                } else if (messageFromClient.getType().equals("private")) {
-                    sendPrivateMessage(messageFromClient);
-                } else {
-                    broadcastMessage(messageFromClient);
+                if (messageFromClient != null) {
+                    switch (messageFromClient.getType()) {
+                        case "search":
+                            handleSearchRequest(messageFromClient);
+                            break;
+                        case "downloadRequest":
+                            handleDownloadRequest(messageFromClient);
+                            break;
+                        case "fileAvailable":
+                            handleFileAvailable(messageFromClient);
+                            break;
+                        default:
+                            System.out.println("Unhandled message type: " + messageFromClient.getType());
+                            break;
+                    }
                 }
-            } catch (IOException | ClassNotFoundException e) {
-                System.out.println(clientUsername + " has disconnected!");
-                broadcastMessage(
-                        new Message("broadcast", "SERVER", null, clientUsername + " has left the chat."));
-                break;
             }
+        } catch (IOException | ClassNotFoundException e) {
+            System.out.println(clientUsername + " has disconnected.");
+        } finally {
+            removeClientHandler();
         }
-        removeClientHandler();
     }
 
-    /**
-     * Sends a private message to the specified recipient.
-     *
-     * @param message The message to be sent.
-     */
-    public void sendPrivateMessage(Message message) {
+    private void handleSearchRequest(Message message) {
+        List<String> searchResults = Server.searchManager.searchFiles(message.getContent());
+        sendMessage(new Message("searchResults", "SERVER", clientUsername, String.join(", ", searchResults)));
+    }
+
+    private void handleDownloadRequest(Message message) {
+        String requestedFile = message.getContent();
         for (ClientHandler clientHandler : clientHandlers) {
-            if (clientHandler.clientUsername.equals(message.getRecipient())) {
-                try {
-                    clientHandler.objectOutputStream.writeObject(message);
-                    clientHandler.objectOutputStream.flush();
-                } catch (IOException e) {
-                    closeEverything(clientHandler.socket, clientHandler.objectInputStream,
-                            clientHandler.objectOutputStream);
-                }
-                return;
+            if (!clientHandler.clientUsername.equals(this.clientUsername)) {
+                System.out.println("download request in client handler");
+                clientHandler.sendMessage(new Message("checkFile", clientUsername, null, requestedFile));
             }
         }
-        // If the target user was not found, inform the sender
+    }
+
+    private void handleFileAvailable(Message message) {
+        System.out.println("start init download method");
+        // Find the client who requested the file download
+        ClientHandler requester = findClientHandler(message.getRecipient());
+        if (requester != null) {
+            System.out.println("initiating download");
+            requester.sendMessage(new Message("initiateDownloadFrom", clientUsername, null, message.getContent()));
+        }
+    }
+
+    private ClientHandler findClientHandler(String username) {
+        for (ClientHandler handler : clientHandlers) {
+            if (handler.clientUsername.equals(username)) {
+                return handler;
+            }
+        }
+        return null;
+    }
+
+    private void sendMessage(Message message) {
         try {
-            objectOutputStream.writeObject(new Message("private", "SERVER", clientUsername,
-                    "User '" + message.getRecipient() + "' not found."));
+            objectOutputStream.writeObject(message);
             objectOutputStream.flush();
         } catch (IOException e) {
-            closeEverything(socket, objectInputStream, objectOutputStream);
+            closeEverything();
         }
     }
 
-    /**
-     * Broadcasts a message to all connected clients except the sender.
-     *
-     * @param message The message to be broadcasted.
-     */
-    public void broadcastMessage(Message message) {
-        for (ClientHandler clientHandler : clientHandlers) {
-            try {
-                if (!clientHandler.clientUsername.equals(clientUsername)) {
-                    clientHandler.objectOutputStream.writeObject(message);
-                    clientHandler.objectOutputStream.flush();
-                }
-            } catch (IOException e) {
-                closeEverything(clientHandler.socket, clientHandler.objectInputStream,
-                        clientHandler.objectOutputStream);
-                removeClientHandler();
-            }
-        }
-    }
-
-    /**
-     * Removes this ClientHandler from the list of active handlers and the set of
-     * active usernames.
-     */
     public void removeClientHandler() {
         Server.activeUsernames.remove(this.clientUsername);
         clientHandlers.remove(this);
+        closeEverything();
     }
 
-    /**
-     * Closes the socket and input/output streams associated with this client
-     * handler.
-     *
-     * @param socket             The socket to be closed.
-     * @param objectInputStream  The input stream to be closed.
-     * @param objectOutputStream The output stream to be closed.
-     */
-    public void closeEverything(Socket socket, ObjectInputStream objectInputStream,
-            ObjectOutputStream objectOutputStream) {
-        removeClientHandler();
+    private void closeEverything() {
         try {
-            if (objectOutputStream != null) {
+            if (objectOutputStream != null)
                 objectOutputStream.close();
-            }
-            if (objectInputStream != null) {
+            if (objectInputStream != null)
                 objectInputStream.close();
-            }
-            if (socket != null) {
-            }
+            if (socket != null)
+                socket.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
