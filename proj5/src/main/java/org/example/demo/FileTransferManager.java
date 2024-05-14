@@ -128,8 +128,8 @@ public class FileTransferManager {
      * @return true if the file exists, false otherwise.
      */
     public boolean hasFile(String fileName) {
-        // Assuming files are stored in a specific directory, adjust path as necessary.
-        File fileToCheck = new File("Group_36_Project_1/files/" + fileName);
+        String relativePath = System.getProperty("user.dir") + "/files/";
+        File fileToCheck = new File(relativePath + fileName);
         return fileToCheck.exists() && !fileToCheck.isDirectory();
     }
 

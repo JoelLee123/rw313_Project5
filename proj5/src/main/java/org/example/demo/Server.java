@@ -30,9 +30,9 @@ public class Server extends Application {
     public void start(Stage primaryStage) {
         try {
             // Initialize SearchManager with the folder path
-            //System independent absolute path - this will only check your specific PC atm
+            // System independent absolute path - this will only check your specific PC atm
             String currentDir = System.getProperty("user.dir");
-            //String projectPath = "/src/main/java/org/example/demo/files";
+            // String projectPath = "/src/main/java/org/example/demo/files";
             String relativePath = currentDir + "/files";
 
             searchManager = new SearchManager(relativePath);
@@ -55,7 +55,7 @@ public class Server extends Application {
             serverThread.setDaemon(true);
             serverThread.start();
 
-            //This code is executed in the main JavaFX thread
+            // This code is executed in the main JavaFX thread
             fileMonitor = new FileMonitor(relativePath, this);
             fileMonitor.start();
 

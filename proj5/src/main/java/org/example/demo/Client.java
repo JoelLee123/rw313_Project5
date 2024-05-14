@@ -144,7 +144,7 @@ public class Client extends Application {
         Platform.runLater(() -> {
             try {
                 fileTransferManager.downloadFile(getServerAddress(), port, filename,
-                        "Group_36_Project_1/filesDownload" + filename, controller.getProgressBar());
+                        "downloads/" + filename, controller.getProgressBar());
             } catch (Exception e) {
                 showAlert("Download Failed", "Failed to initiate download for " + filename + ": " + e.getMessage());
             }
