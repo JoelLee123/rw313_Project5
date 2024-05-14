@@ -131,6 +131,7 @@ public class Client extends Application {
     }
 
     private void handleInitiateDownloadFrom(Message message) {
+        System.out.println("I am called");
         String[] contentParts = message.getContent().split(":"); // Assuming the format is "filename:port"
         if (contentParts.length < 2) {
             System.out.println("Invalid download initiation message format.");

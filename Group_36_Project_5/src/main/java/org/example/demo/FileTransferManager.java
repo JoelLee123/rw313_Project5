@@ -110,7 +110,9 @@ public class FileTransferManager {
                 this.port = serverSocket.getLocalPort();
                 System.out.println("Upload server started on dynamically assigned port: " + this.port);
                 while (!Thread.currentThread().isInterrupted()) {
+                    System.out.println("Start of loop loop");
                     Socket clientSocket = serverSocket.accept();
+                    System.out.println("In the while loop");
                     handleUploadRequest(clientSocket);
                 }
             } catch (IOException e) {
@@ -132,10 +134,13 @@ public class FileTransferManager {
     }
 
     private void handleUploadRequest(Socket clientSocket) {
+        System.out.println("Banana");
         executorService.submit(() -> {
             try (DataOutputStream dos = new DataOutputStream(clientSocket.getOutputStream());
                     DataInputStream dis = new DataInputStream(clientSocket.getInputStream())) {
                 String fileName = dis.readUTF(); // Read the requested file name
+                System.out.println("filename in handleUploadRequest(): " + fileName);
+
                 File fileToUpload = new File(fileName);
                 if (fileToUpload.exists() && !fileToUpload.isDirectory()) {
                     FileInputStream fis = new FileInputStream(fileToUpload);

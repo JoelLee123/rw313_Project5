@@ -85,8 +85,10 @@ public class ChatGuiController extends Application {
 
     @FXML
     private void handleDownloadButton() {
+        System.out.println("Download button is called");
         String selectedItem = searchResultsListView.getSelectionModel().getSelectedItem();
         if (selectedItem != null) {
+            System.out.println("selectedItem is not null");
             // Send a download request to the server
             Message downloadRequest = new Message("downloadRequest", username, username, selectedItem);
             client.sendMessage(downloadRequest);
