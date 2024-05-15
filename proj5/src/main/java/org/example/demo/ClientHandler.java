@@ -18,6 +18,8 @@ public class ClientHandler implements Runnable {
     private ObjectOutputStream objectOutputStream;
     private String clientUsername;
 
+    private static final String ENCRYPTION_KEY = "mySecretKey";
+
     /**
      * Constructs a ClientHandler instance with a specified socket.
      * Initializes the streams and sets up the client connection.
@@ -60,18 +62,21 @@ public class ClientHandler implements Runnable {
             while (socket.isConnected()) {
                 messageFromClient = (Message) objectInputStream.readObject();
                 if (messageFromClient != null) {
-                    switch (messageFromClient.getType()) {
+                    // Pretend to decrypt the content
+                    String decryptedContent = messageFromClient.getContent();
+                    Message decryptedMessage = new Message(messageFromClient.getType(), messageFromClient.getSender(), messageFromClient.getRecipient(), decryptedContent);
+                    switch (decryptedMessage.getType()) {
                         case "search":
-                            handleSearchRequest(messageFromClient);
+                            handleSearchRequest(decryptedMessage);
                             break;
                         case "downloadRequest":
-                            handleDownloadRequest(messageFromClient);
+                            handleDownloadRequest(decryptedMessage);
                             break;
                         case "fileAvailable":
-                            handleFileAvailable(messageFromClient);
+                            handleFileAvailable(decryptedMessage);
                             break;
                         default:
-                            System.out.println("Unhandled message type: " + messageFromClient.getType());
+                            System.out.println("Unhandled message type: " + decryptedMessage.getType());
                             break;
                     }
                 }
@@ -124,7 +129,10 @@ public class ClientHandler implements Runnable {
 
     private void sendMessage(Message message) {
         try {
-            objectOutputStream.writeObject(message);
+            // Pretend to encrypt the content
+            String encryptedContent = Encryption.encrypt(message.getContent(), ENCRYPTION_KEY);
+            Message encryptedMessage = new Message(message.getType(), message.getSender(), message.getRecipient(), encryptedContent);
+            objectOutputStream.writeObject(encryptedMessage);
             objectOutputStream.flush();
         } catch (IOException e) {
             closeEverything();

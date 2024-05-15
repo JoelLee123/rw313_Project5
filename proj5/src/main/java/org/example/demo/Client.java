@@ -29,6 +29,8 @@ public class Client extends Application {
     private String serverAddress;
     private int serverPort;
 
+    private static final String ENCRYPTION_KEY = "mySecretKey";
+
     /**
      * Constructs a Client instance with a specified socket, username, and
      * controller.
@@ -81,8 +83,11 @@ public class Client extends Application {
      */
     public void sendMessage(Message message) {
         try {
-            objectOutputStream.writeObject(message);
-            objectOutputStream.flush();
+
+        String encryptedContent = Encryption.encrypt(message.getContent(), ENCRYPTION_KEY);
+        Message encryptedMessage = new Message(message.getType(), message.getSender(), message.getRecipient(), encryptedContent);
+        objectOutputStream.writeObject(encryptedMessage);
+        objectOutputStream.flush();
         } catch (IOException e) {
             closeEverything(socket, objectInputStream, objectOutputStream);
         }
@@ -94,7 +99,9 @@ public class Client extends Application {
                 try {
                     Message messageFromServer = (Message) objectInputStream.readObject();
                     if (messageFromServer != null) {
-                        if (messageFromServer.getContent().equals("Username is already taken.")) {
+                        // Pretend to decrypt the content
+                        String decryptedContent = messageFromServer.getContent();
+                        if (decryptedContent.equals("Username is already taken.")) {
                             // Restart the client
                             Platform.runLater(() -> {
                                 try {
@@ -107,15 +114,24 @@ public class Client extends Application {
                             stop();
                             return;
                         }
-
+    
                         switch (messageFromServer.getType()) {
                             case "searchResults":
-                                handleSearchResults(messageFromServer.getContent());
+                                // Pretend to decrypt the content
+                                decryptedContent = messageFromServer.getContent();
+                                handleSearchResults(decryptedContent);
                                 break;
                             case "initiateDownloadFrom":
-                                handleInitiateDownloadFrom(messageFromServer);
+                                // Pretend to decrypt the content
+                                decryptedContent = messageFromServer.getContent();
+                                Message decryptedMessage = new Message(messageFromServer.getType(), messageFromServer.getSender(), messageFromServer.getRecipient(), decryptedContent);
+                                handleInitiateDownloadFrom(decryptedMessage);
+                                break;
                             case "checkFile":
-                                handleCheckFileRequest(messageFromServer);
+                                // Pretend to decrypt the content
+                                decryptedContent = messageFromServer.getContent();
+                                decryptedMessage = new Message(messageFromServer.getType(), messageFromServer.getSender(), messageFromServer.getRecipient(), decryptedContent);
+                                handleCheckFileRequest(decryptedMessage);
                                 break;
                             default:
                                 System.out.println("Unhandled message type: " + messageFromServer.getType());
