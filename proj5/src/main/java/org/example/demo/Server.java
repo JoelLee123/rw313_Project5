@@ -25,8 +25,6 @@ public class Server extends Application {
     private static ServerController controller;
     public static SearchManager searchManager;
 
-    private FileMonitor fileMonitor;
-
     @Override
     public void start(Stage primaryStage) {
         try {
@@ -58,10 +56,6 @@ public class Server extends Application {
             });
             serverThread.setDaemon(true);
             serverThread.start();
-
-            // This code is executed in the main JavaFX thread
-            fileMonitor = new FileMonitor(relativePath, this);
-            fileMonitor.start();
 
         } catch (Exception e) {
             e.printStackTrace();

@@ -14,20 +14,6 @@
             </font>
         </Label>
 
-        <!-- Label for List of Files -->
-        <Label layoutX="45.0" layoutY="71.0" text="List of Files" textFill="WHITE" alignment="CENTER">
-            <font>
-                <Font name="Verdana Bold" size="18.0" />
-            </font>
-        </Label>
-
-        <!-- TextArea for List of Files -->
-        <TextArea fx:id="ListOfFilesTA" editable="false" layoutX="45.0" layoutY="100.0" prefHeight="200.0" prefWidth="250.0" style="-fx-background-color: darkgray;" wrapText="true">
-            <font>
-                <Font name="Verdana" size="12.0" />
-            </font>
-        </TextArea>
-
         <!-- Label for Client Activity -->
         <Label layoutX="324.0" layoutY="71.0" text="Client Activity" textFill="WHITE" alignment="CENTER">
             <font>
