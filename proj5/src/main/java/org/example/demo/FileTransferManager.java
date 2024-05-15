@@ -27,17 +27,28 @@ public class FileTransferManager {
 
     String uploadPath = System.getProperty("user.dir") + "/files/";
 
+    /**
+     * The FileTransferManager class handles file transfer operations between clients.
+     * It provides methods for uploading and downloading files, as well as managing
+     * the upload server and download progress.
+     */
     public FileTransferManager() {
         executorService = Executors.newCachedThreadPool();
         startUploadServer();
     }
 
+    /**
+     * Resumes a paused download.
+     */
     public void resumeDownload() {
         pauseDownloadFlag = false;
         isDownloadPaused = false;
         resumeDownload(this.serverAddress, this.serverPort, this.fileToDownload, this.savePath);
     }
 
+    /**
+     * Pauses the current download.
+     */
     public void pauseDownload() {
         System.out.println("pauseDownload() is called");
         pauseDownloadFlag = true;
@@ -45,10 +56,18 @@ public class FileTransferManager {
         Server.updateClientActivity("Download paused");
     }
 
+    /**
+     * Returns the port number used for the upload server.
+     *
+     * @return The port number.
+     */
     public int getPort() {
         return port; // Retrieve the dynamically assigned port
     }
 
+    /**
+     * Starts the upload server on a dynamically assigned port.
+     */
     void startUploadServer() {
         executorService.submit(() -> {
             try (ServerSocket serverSocket = new ServerSocket(0)) { // System-assigned port
@@ -126,6 +145,14 @@ public class FileTransferManager {
         });
     }
 
+    /**
+     * Resumes a paused download.
+     *
+     * @param serverAddress  The IP address of the peer from which to download.
+     * @param serverPort     The port number on the peer for downloading.
+     * @param fileToDownload The name of the file to download.
+     * @param savePath       The local path to save the downloaded file.
+     */
     public void resumeDownload(String serverAddress, int serverPort, String fileToDownload, String savePath) {
         pauseDownloadFlag = false;
         isDownloadPaused = false;
@@ -176,6 +203,11 @@ public class FileTransferManager {
         return fileToCheck.exists() && !fileToCheck.isDirectory();
     }
 
+    /**
+     * Handles an upload request from a client.
+     *
+     * @param clientSocket The socket connection with the client.
+     */
     private void handleUploadRequest(Socket clientSocket) {
         executorService.submit(() -> {
             try (DataOutputStream dos = new DataOutputStream(clientSocket.getOutputStream());
