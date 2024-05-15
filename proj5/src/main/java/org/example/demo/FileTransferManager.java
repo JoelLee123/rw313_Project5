@@ -22,8 +22,6 @@ public class FileTransferManager {
     public FileTransferManager(ProgressBar progressBar) {
 
         this.progressBar = progressBar;
-        //this.chatGuiController = chatGuiController;
-        //chatGuiController.setFileManager(this);
         executorService = Executors.newCachedThreadPool();
         startUploadServer();
     }
@@ -36,9 +34,6 @@ public class FileTransferManager {
         System.out.println("pusDownload() is called");
         pauseDownloadFlag = true;
         Server.updateClientActivity("Download paused");
-
-        //Pause the progress bar - seems to cause a null pointer exception
-      //  Platform.runLater(() -> progressBar.setProgress(-1));
     }
 
     public int getPort() {
@@ -112,7 +107,7 @@ public class FileTransferManager {
         });
     }
 
-    /*public void resumeDownload(String serverAddress, int serverPort, String fileToDownload, String savePath,
+    public void resumeDownload(String serverAddress, int serverPort, String fileToDownload, String savePath,
             long offset) {
         pauseDownloadFlag = false;
         executorService.submit(() -> {
@@ -147,7 +142,7 @@ public class FileTransferManager {
                 System.out.println("Resume download error: " + e.getMessage());
             }
         });
-    } */
+    }
 
     /**
      * Checks if the specified file exists in the local storage.
@@ -206,9 +201,8 @@ public class FileTransferManager {
                 } else {
                     System.out.println("Requested file does not exist: " + fileName);
                 }
-            }
-            catch (SocketException e) {
-                //Handle client disconnection gracefully
+            } catch (SocketException e) {
+                // Handle client disconnection gracefully
                 System.out.println("Client disconnected: " + e.getMessage());
             } catch (IOException e) {
                 System.out.println("Upload error: " + e.getMessage());

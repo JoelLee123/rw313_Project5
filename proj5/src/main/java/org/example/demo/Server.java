@@ -35,16 +35,17 @@ public class Server extends Application {
             primaryStage.setScene(scene);
             primaryStage.show();
 
-            //controller = fxmlLoader.getController();
+            // controller = fxmlLoader.getController();
             setController(fxmlLoader.getController());
-            System.out.println("Controller set in start method: " + (controller != null));
+            // System.out.println("Controller set in start method: " + (controller !=
+            // null));
 
             String currentDir = System.getProperty("user.dir");
             String relativePath = currentDir + "/files";
 
             searchManager = new SearchManager(relativePath);
 
-            //I will probably need to make a FileTransferManager object - similar to thhe
+            // I will probably need to make a FileTransferManager object - similar to thhe
 
             Thread serverThread = new Thread(() -> {
                 try {
@@ -104,20 +105,20 @@ public class Server extends Application {
      * @param activity Description of the client activity
      */
     public static synchronized void updateClientActivity(String activity) {
-        //To avoid threading issues
+        // To avoid threading issues
         Platform.runLater(() -> {
             if (controller != null) {
                 controller.appendClientActivity(activity);
             } else {
-                System.out.println("Controller is not initialized.");
+                // System.out.println("Controller is not initialized.");
             }
         });
     }
 
     public static synchronized void setController(ServerController newController) {
-        System.out.println("Setting the server controller.");
+        // System.out.println("Setting the server controller.");
         controller = newController;
-        System.out.println("Controller set: " + (controller != null));
+        // System.out.println("Controller set: " + (controller != null));
     }
 
     /**

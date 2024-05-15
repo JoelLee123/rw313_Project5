@@ -51,7 +51,7 @@ public class Client extends Application {
             this.serverAddress = serverAddress;
 
             // Send the username as a Message object to the server
-            sendMessage(new Message("login", username, null, username));
+            sendMessage(new Message("login", username, null, null));
             listenForMessage();
         } catch (IOException e) {
             closeEverything(socket, objectInputStream, objectOutputStream);
@@ -84,10 +84,11 @@ public class Client extends Application {
     public void sendMessage(Message message) {
         try {
 
-        String encryptedContent = Encryption.encrypt(message.getContent(), ENCRYPTION_KEY);
-        Message encryptedMessage = new Message(message.getType(), message.getSender(), message.getRecipient(), encryptedContent);
-        objectOutputStream.writeObject(encryptedMessage);
-        objectOutputStream.flush();
+            String encryptedContent = Encryption.encrypt(message.getContent(), ENCRYPTION_KEY);
+            Message encryptedMessage = new Message(message.getType(), message.getSender(), message.getRecipient(),
+                    encryptedContent);
+            objectOutputStream.writeObject(encryptedMessage);
+            objectOutputStream.flush();
         } catch (IOException e) {
             closeEverything(socket, objectInputStream, objectOutputStream);
         }
@@ -99,8 +100,14 @@ public class Client extends Application {
                 try {
                     Message messageFromServer = (Message) objectInputStream.readObject();
                     if (messageFromServer != null) {
-                        // Pretend to decrypt the content
-                        String decryptedContent = messageFromServer.getContent();
+                        // Decrypt the content
+                        String decryptedContent = Encryption.decrypt(messageFromServer.getContent(), ENCRYPTION_KEY);
+                        Message decryptedMessage = new Message(
+                                messageFromServer.getType(),
+                                messageFromServer.getSender(),
+                                messageFromServer.getRecipient(),
+                                decryptedContent);
+
                         if (decryptedContent.equals("Username is already taken.")) {
                             // Restart the client
                             Platform.runLater(() -> {
@@ -114,27 +121,19 @@ public class Client extends Application {
                             stop();
                             return;
                         }
-    
-                        switch (messageFromServer.getType()) {
+
+                        switch (decryptedMessage.getType()) {
                             case "searchResults":
-                                // Pretend to decrypt the content
-                                decryptedContent = messageFromServer.getContent();
-                                handleSearchResults(decryptedContent);
+                                handleSearchResults(decryptedMessage.getContent());
                                 break;
                             case "initiateDownloadFrom":
-                                // Pretend to decrypt the content
-                                decryptedContent = messageFromServer.getContent();
-                                Message decryptedMessage = new Message(messageFromServer.getType(), messageFromServer.getSender(), messageFromServer.getRecipient(), decryptedContent);
                                 handleInitiateDownloadFrom(decryptedMessage);
                                 break;
                             case "checkFile":
-                                // Pretend to decrypt the content
-                                decryptedContent = messageFromServer.getContent();
-                                decryptedMessage = new Message(messageFromServer.getType(), messageFromServer.getSender(), messageFromServer.getRecipient(), decryptedContent);
                                 handleCheckFileRequest(decryptedMessage);
                                 break;
                             default:
-                                System.out.println("Unhandled message type: " + messageFromServer.getType());
+                                System.out.println("Unhandled message type: " + decryptedMessage.getType());
                                 break;
                         }
                     } else {

@@ -12,7 +12,7 @@ public class Encryption {
     private static final int KEY_SIZE = 128;
 
     public static String encrypt(String content, String key) {
-        
+
         try {
             System.out.println("Content before encryption: " + content);
             Key secretKey = generateKey(key);
@@ -21,10 +21,8 @@ public class Encryption {
             byte[] encryptedBytes = cipher.doFinal(content.getBytes());
             String encryptedContent = Base64.getEncoder().encodeToString(encryptedBytes);
             System.out.println("Encrypted content: " + encryptedContent);
-            return content;
-            //return encryptedContent;
-            
-    
+            return encryptedContent;
+
         } catch (Exception e) {
             e.printStackTrace();
             return null;
@@ -33,7 +31,6 @@ public class Encryption {
     }
 
     public static String decrypt(String encryptedContent, String key) {
-        // /*
         try {
             System.out.println("Encrypted content before decryption: " + encryptedContent);
             Key secretKey = generateKey(key);
@@ -42,10 +39,8 @@ public class Encryption {
             byte[] decryptedBytes = cipher.doFinal(Base64.getDecoder().decode(encryptedContent));
             String decryptedContent = new String(decryptedBytes);
             System.out.println("Decrypted content: " + decryptedContent);
-            return encryptedContent;
-            //return decryptedContent;
-            
-            
+            return decryptedContent;
+
         } catch (Exception e) {
             e.printStackTrace();
             return null;

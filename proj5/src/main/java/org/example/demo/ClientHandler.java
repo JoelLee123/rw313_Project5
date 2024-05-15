@@ -34,7 +34,7 @@ public class ClientHandler implements Runnable {
             this.objectInputStream = new ObjectInputStream(socket.getInputStream());
 
             Message usernameMessage = (Message) objectInputStream.readObject();
-            this.clientUsername = usernameMessage.getContent();
+            this.clientUsername = usernameMessage.getSender();
 
             if (!Server.activeUsernames.add(this.clientUsername)) {
                 sendMessage(new Message("login", "SERVER", null, "Username is already taken."));
@@ -58,13 +58,12 @@ public class ClientHandler implements Runnable {
     @Override
     public void run() {
         try {
-            Message messageFromClient;
             while (socket.isConnected()) {
-                messageFromClient = (Message) objectInputStream.readObject();
+                Message messageFromClient = (Message) objectInputStream.readObject();
                 if (messageFromClient != null) {
-                    // Pretend to decrypt the content
-                    String decryptedContent = messageFromClient.getContent();
-                    Message decryptedMessage = new Message(messageFromClient.getType(), messageFromClient.getSender(), messageFromClient.getRecipient(), decryptedContent);
+                    String decryptedContent = Encryption.decrypt(messageFromClient.getContent(), ENCRYPTION_KEY);
+                    Message decryptedMessage = new Message(messageFromClient.getType(), messageFromClient.getSender(),
+                            messageFromClient.getRecipient(), decryptedContent);
                     switch (decryptedMessage.getType()) {
                         case "search":
                             handleSearchRequest(decryptedMessage);
@@ -96,6 +95,7 @@ public class ClientHandler implements Runnable {
     }
 
     private void handleDownloadRequest(Message message) {
+        System.out.println("download request in client handler1");
         String requestedFile = message.getContent();
         for (ClientHandler clientHandler : clientHandlers) {
             if (!clientHandler.clientUsername.equals(this.clientUsername)) {
@@ -109,6 +109,7 @@ public class ClientHandler implements Runnable {
     private void handleFileAvailable(Message message) {
         System.out.println("start init download method");
         System.out.println(message.getSender());
+        System.out.println(message.getRecipient());
         // Find the client who requested the file download
         ClientHandler recipient = findClientHandler(message.getRecipient());
         if (recipient != null) {
@@ -131,7 +132,8 @@ public class ClientHandler implements Runnable {
         try {
             // Pretend to encrypt the content
             String encryptedContent = Encryption.encrypt(message.getContent(), ENCRYPTION_KEY);
-            Message encryptedMessage = new Message(message.getType(), message.getSender(), message.getRecipient(), encryptedContent);
+            Message encryptedMessage = new Message(message.getType(), message.getSender(), message.getRecipient(),
+                    encryptedContent);
             objectOutputStream.writeObject(encryptedMessage);
             objectOutputStream.flush();
         } catch (IOException e) {
