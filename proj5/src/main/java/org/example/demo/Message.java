@@ -14,7 +14,6 @@ public class Message implements Serializable {
     private final String sender;
     private final String recipient; // Used for private messages
     private final String content;
-    private final String messageKey;
 
     /**
      * Constructs a new Message instance with the specified parameters.
@@ -24,12 +23,11 @@ public class Message implements Serializable {
      * @param recipient The username of the recipient (for private messages).
      * @param content   The textual content of the message.
      */
-    public Message(String type, String sender, String recipient, String content, String messageKey) {
+    public Message(String type, String sender, String recipient, String content) {
         this.type = type;
         this.sender = sender;
         this.recipient = recipient;
         this.content = content;
-        this.messageKey = messageKey;
     }
 
     /**
@@ -66,9 +64,5 @@ public class Message implements Serializable {
      */
     public String getContent() {
         return content;
-    }
-
-    public String getMessageKey() {
-        return messageKey;
     }
 }

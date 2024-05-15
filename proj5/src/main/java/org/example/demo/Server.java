@@ -1,6 +1,7 @@
 package org.example.demo;
 
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
@@ -29,17 +30,23 @@ public class Server extends Application {
     @Override
     public void start(Stage primaryStage) {
         try {
-            String currentDir = System.getProperty("user.dir");
-            String relativePath = currentDir + "/files";
 
-            searchManager = new SearchManager(relativePath);
             FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("ServerGUI.fxml"));
             Scene scene = new Scene(fxmlLoader.load());
             primaryStage.setTitle("Server");
             primaryStage.setScene(scene);
             primaryStage.show();
 
-            controller = fxmlLoader.getController();
+            //controller = fxmlLoader.getController();
+            setController(fxmlLoader.getController());
+            System.out.println("Controller set in start method: " + (controller != null));
+
+            String currentDir = System.getProperty("user.dir");
+            String relativePath = currentDir + "/files";
+
+            searchManager = new SearchManager(relativePath);
+
+            //I will probably need to make a FileTransferManager object - similar to thhe
 
             Thread serverThread = new Thread(() -> {
                 try {
@@ -102,8 +109,21 @@ public class Server extends Application {
      *
      * @param activity Description of the client activity
      */
-    public static void updateClientActivity(String activity) {
-        controller.appendClientActivity(activity);
+    public static synchronized void updateClientActivity(String activity) {
+        //To avoid threading issues
+        Platform.runLater(() -> {
+            if (controller != null) {
+                controller.appendClientActivity(activity);
+            } else {
+                System.out.println("Controller is not initialized.");
+            }
+        });
+    }
+
+    public static synchronized void setController(ServerController newController) {
+        System.out.println("Setting the server controller.");
+        controller = newController;
+        System.out.println("Controller set: " + (controller != null));
     }
 
     /**

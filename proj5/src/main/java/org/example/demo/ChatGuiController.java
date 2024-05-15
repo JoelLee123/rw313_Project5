@@ -18,12 +18,14 @@ import javafx.scene.control.TextField;
 public class ChatGuiController extends Application {
     private String username;
     private Client client;
+    private FileTransferManager fileTransferManager;
+    private boolean isDownloadPaused;
     @FXML
     private TextField searchInput;
     @FXML
     private ListView<String> searchResultsListView;
     @FXML
-    private Button btnSearch, btnDownload;
+    private Button btnSearch, btnDownload, btnPauseDownload;
     @FXML
     private ProgressBar downloadProgress;
 
@@ -32,6 +34,11 @@ public class ChatGuiController extends Application {
      */
     public ChatGuiController() {
         // Default constructor is required for FXML loading
+        fileTransferManager = new FileTransferManager( downloadProgress);
+    }
+
+    public FileTransferManager getFileTransferManager() {
+        return fileTransferManager;
     }
 
     /**
@@ -60,6 +67,10 @@ public class ChatGuiController extends Application {
     public void setClient(Client client) {
         this.client = client;
     }
+
+    /*public void setFileManager(FileTransferManager fileManager) {
+        this.fileTransferManager = fileManager;
+    } */
 
     public void initialize() {
         btnSearch.setOnAction(event -> handleSearchButton());
@@ -90,7 +101,7 @@ public class ChatGuiController extends Application {
         if (selectedItem != null) {
             System.out.println("selectedItem is not null");
             // Send a download request to the server
-            Message downloadRequest = new Message("downloadRequest", username, username, selectedItem, "");
+            Message downloadRequest = new Message("downloadRequest", username, username, selectedItem);
             client.sendMessage(downloadRequest);
         }
     }
@@ -101,6 +112,20 @@ public class ChatGuiController extends Application {
         if (!query.isEmpty()) {
             client.sendSearchRequest(query); // Send the search query to the server
             searchInput.clear(); // Clear the input field after sending the request
+        }
+    }
+
+    @FXML
+    private void handlePauseButton() {
+        System.out.println("Pause button is linked");
+        fileTransferManager.pauseDownload();
+
+        if (isDownloadPaused) {
+            fileTransferManager.resumeDownload();
+            isDownloadPaused = false;
+        } else {
+            fileTransferManager.pauseDownload();
+            isDownloadPaused = true;
         }
     }
 

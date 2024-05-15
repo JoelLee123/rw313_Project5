@@ -17,7 +17,6 @@ public class ClientHandler implements Runnable {
     private ObjectInputStream objectInputStream;
     private ObjectOutputStream objectOutputStream;
     private String clientUsername;
-    String originalKeyString;
 
     /**
      * Constructs a ClientHandler instance with a specified socket.
@@ -36,13 +35,15 @@ public class ClientHandler implements Runnable {
             this.clientUsername = usernameMessage.getContent();
 
             if (!Server.activeUsernames.add(this.clientUsername)) {
-                sendMessage(new Message("login", "SERVER", null, "Username is already taken.", ""));
+                sendMessage(new Message("login", "SERVER", null, "Username is already taken."));
                 closeEverything();
                 return;
             }
 
             clientHandlers.add(this);
             Server.activeUsernames.add(this.clientUsername);
+
+            Server.updateClientActivity("New user has connected");
 
         } catch (IOException | ClassNotFoundException e) {
             closeEverything();
@@ -77,6 +78,7 @@ public class ClientHandler implements Runnable {
             }
         } catch (IOException | ClassNotFoundException e) {
             System.out.println(clientUsername + " has disconnected.");
+            Server.updateClientActivity("A user has disconnected");
         } finally {
             removeClientHandler();
         }
@@ -84,11 +86,9 @@ public class ClientHandler implements Runnable {
 
     private void handleSearchRequest(Message message) {
         System.out.println("Message content: " + message.getContent());
-
         List<String> searchResults = Server.searchManager.searchFiles(message.getContent());
-        sendMessage(new Message("searchResults", "SERVER", clientUsername, String.join(", ", searchResults) ,""));
+        sendMessage(new Message("searchResults", "SERVER", clientUsername, String.join(", ", searchResults)));
     }
-
 
     private void handleDownloadRequest(Message message) {
         String requestedFile = message.getContent();
@@ -96,28 +96,19 @@ public class ClientHandler implements Runnable {
             if (!clientHandler.clientUsername.equals(this.clientUsername)) {
                 System.out.println("download request in client handler");
                 clientHandler
-                        .sendMessage(new Message("checkFile", clientUsername, message.getRecipient(), requestedFile, ""));
+                        .sendMessage(new Message("checkFile", clientUsername, message.getRecipient(), requestedFile));
             }
         }
     }
 
     private void handleFileAvailable(Message message) {
-        String[] contentParts = message.getContent().split(":");
-        if (contentParts.length < 2) {
-            System.out.println("Invalid file available message format.");
-            return;
-        }
-        String filename = contentParts[0];
-        int port = Integer.parseInt(contentParts[1]);
-        
-        String encryptedMessageKey = message.getMessageKey();
-        String decryptedMessageKey = Encryption.decrypt(encryptedMessageKey);
-        System.out.println("decrypted key: " + decryptedMessageKey);
-    
+        System.out.println("start init download method");
+        System.out.println(message.getSender());
+        // Find the client who requested the file download
         ClientHandler recipient = findClientHandler(message.getRecipient());
         if (recipient != null) {
-            recipient.sendMessage(new Message("initiateDownloadFrom", clientUsername, null,
-                    filename + ":" + port, decryptedMessageKey));
+            System.out.println("initiating download");
+            recipient.sendMessage(new Message("initiateDownloadFrom", clientUsername, null, message.getContent()));
         }
     }
 

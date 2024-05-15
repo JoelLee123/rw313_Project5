@@ -44,6 +44,8 @@ public class SearchManager {
             }
         }
         System.out.println("Search results count: " + results.size());
+
+        Server.updateClientActivity("Client searched for: " + query + " with " + results.size() + " results found");
         return results;
     }
 

@@ -3,6 +3,7 @@ package org.example.demo;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import javafx.application.Platform;
@@ -12,19 +13,32 @@ public class FileTransferManager {
     private ExecutorService executorService; // To manage threads efficiently
     private volatile boolean pauseDownloadFlag = false; // Flag to control download pausing
     private ProgressBar progressBar;
+    private ChatGuiController chatGuiController;
+    ServerController serverController;
     private int port;
 
-
     String uploadPath = System.getProperty("user.dir") + "/files/";
-    String downloadPath = System.getProperty("user.dir") + "/downloads/";
 
-    public FileTransferManager() {
+    public FileTransferManager(ProgressBar progressBar) {
+
+        this.progressBar = progressBar;
+        //this.chatGuiController = chatGuiController;
+        //chatGuiController.setFileManager(this);
         executorService = Executors.newCachedThreadPool();
         startUploadServer();
     }
 
+    public void resumeDownload() {
+        pauseDownloadFlag = false;
+    }
+
     public void pauseDownload() {
+        System.out.println("pusDownload() is called");
         pauseDownloadFlag = true;
+        Server.updateClientActivity("Download paused");
+
+        //Pause the progress bar - seems to cause a null pointer exception
+      //  Platform.runLater(() -> progressBar.setProgress(-1));
     }
 
     public int getPort() {
@@ -74,24 +88,31 @@ public class FileTransferManager {
                 long totalRead = 0;
                 byte[] buffer = new byte[4096];
                 int read;
-                while ((read = dis.read(buffer)) > 0) {
+                while ((read = dis.read(buffer)) > 0 && !pauseDownloadFlag) {
                     System.out.println("here4");
                     fos.write(buffer, 0, read);
                     totalRead += read;
                     double progress = totalRead / (double) fileSize;
-                    Platform.runLater(() -> progressBar.setProgress(progress));
+                    if (progressBar != null) {
+                        Platform.runLater(() -> progressBar.setProgress(progress));
+                    }
+                    Server.updateClientActivity("Download progress: " + progress);
                 }
                 if (totalRead >= fileSize) {
                     System.out.println("Download complete.");
-                    Platform.runLater(() -> progressBar.setProgress(1.0)); // Complete the progress bar
+                    if (progressBar != null) {
+                        Platform.runLater(() -> progressBar.setProgress(1.0)); // Complete the progress bar
+                    }
+                    Server.updateClientActivity("Download completed for file: " + fileToDownload);
                 }
             } catch (IOException e) {
                 System.out.println("Download error: " + e.getMessage());
+                Server.updateClientActivity("Download error for file: " + fileToDownload);
             }
         });
     }
 
-    public void resumeDownload(String serverAddress, int serverPort, String fileToDownload, String savePath,
+    /*public void resumeDownload(String serverAddress, int serverPort, String fileToDownload, String savePath,
             long offset) {
         pauseDownloadFlag = false;
         executorService.submit(() -> {
@@ -126,7 +147,7 @@ public class FileTransferManager {
                 System.out.println("Resume download error: " + e.getMessage());
             }
         });
-    }
+    } */
 
     /**
      * Checks if the specified file exists in the local storage.
@@ -165,7 +186,7 @@ public class FileTransferManager {
                             raf.seek(offset);
                             byte[] buffer = new byte[4096];
                             int read;
-                            while ((read = raf.read(buffer)) > 0) {
+                            while ((read = raf.read(buffer)) > 0 && !pauseDownloadFlag) {
                                 dos.write(buffer, 0, read);
                             }
                         }
@@ -176,7 +197,7 @@ public class FileTransferManager {
                         try (FileInputStream fis = new FileInputStream(fileToUpload)) {
                             byte[] buffer = new byte[4096];
                             int read;
-                            while ((read = fis.read(buffer)) > 0) {
+                            while ((read = fis.read(buffer)) > 0 && !pauseDownloadFlag) {
                                 System.out.println("here3");
                                 dos.write(buffer, 0, read);
                             }
@@ -185,6 +206,10 @@ public class FileTransferManager {
                 } else {
                     System.out.println("Requested file does not exist: " + fileName);
                 }
+            }
+            catch (SocketException e) {
+                //Handle client disconnection gracefully
+                System.out.println("Client disconnected: " + e.getMessage());
             } catch (IOException e) {
                 System.out.println("Upload error: " + e.getMessage());
             } finally {

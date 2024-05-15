@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
-import java.util.UUID;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
@@ -30,8 +29,6 @@ public class Client extends Application {
     private String serverAddress;
     private int serverPort;
 
-    String originalMessageKey;
-
     /**
      * Constructs a Client instance with a specified socket, username, and
      * controller.
@@ -41,7 +38,7 @@ public class Client extends Application {
      * @param controller The controller for the chat GUI.
      */
     public Client(Socket socket, String username, ChatGuiController controller, String serverAddress) {
-        this.fileTransferManager = new FileTransferManager();
+        this.fileTransferManager = controller.getFileTransferManager();
         try {
             this.controller = controller;
             this.socket = socket;
@@ -52,7 +49,7 @@ public class Client extends Application {
             this.serverAddress = serverAddress;
 
             // Send the username as a Message object to the server
-            sendMessage(new Message("login", username, null, username, ""));
+            sendMessage(new Message("login", username, null, username));
             listenForMessage();
         } catch (IOException e) {
             closeEverything(socket, objectInputStream, objectOutputStream);
@@ -97,10 +94,21 @@ public class Client extends Application {
                 try {
                     Message messageFromServer = (Message) objectInputStream.readObject();
                     if (messageFromServer != null) {
+                        if (messageFromServer.getContent().equals("Username is already taken.")) {
+                            // Restart the client
+                            Platform.runLater(() -> {
+                                try {
+                                    closeEverything(socket, objectInputStream, objectOutputStream);
+                                    restartClient(username); // restart the client if username has been taken
+                                } catch (IOException e) {
+                                    e.printStackTrace();
+                                }
+                            });
+                            stop();
+                            return;
+                        }
+
                         switch (messageFromServer.getType()) {
-                            case "usernameTaken":
-                                handleUsernameTaken();
-                                break;
                             case "searchResults":
                                 handleSearchResults(messageFromServer.getContent());
                                 break;
@@ -116,7 +124,7 @@ public class Client extends Application {
                     } else {
                         handleServerDown();
                     }
-                } catch (IOException | ClassNotFoundException e) {
+                } catch (Exception e) {
                     handleException(e.getMessage());
                     break;
                 }
@@ -128,48 +136,35 @@ public class Client extends Application {
         String filename = message.getContent();
         if (fileTransferManager.hasFile(filename)) {
             System.out.println("check file in client");
-
-            originalMessageKey = generateRandomMessageKey(); // Generate a unique message key
-            
-            System.out.println("original key: " + originalMessageKey);
-
-            String encryptedMessageKey = Encryption.encrypt(originalMessageKey);
-
-            System.out.println("encrypted key: " + encryptedMessageKey); 
-
             sendMessage(new Message("fileAvailable", username, message.getRecipient(),
-                    filename + ":" + fileTransferManager.getPort(), encryptedMessageKey));
+                    filename + ":" + fileTransferManager.getPort()));
         }
     }
 
     private void handleInitiateDownloadFrom(Message message) {
-        String[] contentParts = message.getContent().split(":");
+        System.out.println("I am called");
+        String[] contentParts = message.getContent().split(":"); // Assuming the format is "filename:port"
         if (contentParts.length < 2) {
             System.out.println("Invalid download initiation message format.");
             return;
         }
         String filename = contentParts[0];
-        int port = Integer.parseInt(contentParts[1]);
-        String decryptedMessageKey = message.getMessageKey();
-        System.out.println("decrypted key:" + decryptedMessageKey);
+        int port = Integer.parseInt(contentParts[1]); // Make sure to handle potential NumberFormatException
+        System.out.println(filename + ": " + port + ": " + getServerAddress());
 
-        if (decryptedMessageKey.equals(originalMessageKey)) {
-            Platform.runLater(() -> {
-                try {
-                    String relativePath = System.getProperty("user.dir") + "/downloads/";
-                    fileTransferManager.downloadFile(getServerAddress(), port, filename,
-                            relativePath + filename, controller.getProgressBar());
-                } catch (Exception e) {
-                    showAlert("Download Failed", "Failed to initiate download for " + filename + ": " + e.getMessage());
-                }
-            });
-        } else {
-            System.out.println("Message key verification failed. Download aborted.");
-        }
+        Platform.runLater(() -> {
+            try {
+                String relativePath = System.getProperty("user.dir") + "/downloads/";
+                fileTransferManager.downloadFile(getServerAddress(), port, filename,
+                        relativePath + filename, controller.getProgressBar());
+            } catch (Exception e) {
+                showAlert("Download Failed", "Failed to initiate download for " + filename + ": " + e.getMessage());
+            }
+        });
     }
 
     public void sendSearchRequest(String query) {
-        sendMessage(new Message("search", username, null, query, ""));
+        sendMessage(new Message("search", username, null, query));
     }
 
     private void handleUsernameTaken() {
@@ -193,13 +188,6 @@ public class Client extends Application {
             System.out.println("SERVER: Server down, disconnecting clients...");
             System.exit(0);
         });
-    }
-
-    private String generateRandomMessageKey() {
-        // Implement your logic to generate a random message key
-        // For example, you can use UUID or a random string generator
-        // Here's a simple example using UUID:
-        return UUID.randomUUID().toString();
     }
 
     private void handleException(String errorMessage) {

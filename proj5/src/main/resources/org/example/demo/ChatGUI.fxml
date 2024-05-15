@@ -29,7 +29,7 @@
                         <Font size="16.0" />
                     </font>
                 </Button>
-                <Button fx:id="btnPauseDownload" mnemonicParsing="false" prefHeight="40.0" prefWidth="269.0" style="-fx-background-color: #FF6347; -fx-border-color: #FF6347;" text="Pause" textFill="WHITE">
+                <Button fx:id="btnPauseDownload" onAction="#handlePauseButton" mnemonicParsing="false" prefHeight="40.0" prefWidth="269.0" style="-fx-background-color: #FF6347; -fx-border-color: #FF6347;" text="Pause" textFill="WHITE">
                     <font>
                         <Font size="16.0" />
                     </font>
