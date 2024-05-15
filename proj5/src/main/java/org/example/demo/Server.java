@@ -5,8 +5,6 @@ import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
-
-import java.io.File;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -93,10 +91,6 @@ public class Server extends Application {
         } catch (IOException e) {
             e.printStackTrace();
         }
-    }
-
-    public void updateFileList(File[] files) {
-        controller.appendFileList(files);
     }
 
     /**

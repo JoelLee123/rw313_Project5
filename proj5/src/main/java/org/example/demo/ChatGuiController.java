@@ -18,8 +18,6 @@ import javafx.scene.control.TextField;
 public class ChatGuiController extends Application {
     private String username;
     private Client client;
-    private FileTransferManager fileTransferManager;
-    private boolean isDownloadPaused;
     @FXML
     private TextField searchInput;
     @FXML
@@ -34,11 +32,6 @@ public class ChatGuiController extends Application {
      */
     public ChatGuiController() {
         // Default constructor is required for FXML loading
-        fileTransferManager = new FileTransferManager(downloadProgress);
-    }
-
-    public FileTransferManager getFileTransferManager() {
-        return fileTransferManager;
     }
 
     /**
@@ -68,16 +61,6 @@ public class ChatGuiController extends Application {
         this.client = client;
     }
 
-    /*
-     * public void setFileManager(FileTransferManager fileManager) {
-     * this.fileTransferManager = fileManager;
-     * }
-     */
-
-    /**
-     * Initializes the controller and sets up event handlers and list cell
-     * formatting.
-     */
     public void initialize() {
         // Set the event handler for the search button
         btnSearch.setOnAction(event -> handleSearchButton());
@@ -146,20 +129,13 @@ public class ChatGuiController extends Application {
      */
     @FXML
     private void handlePauseButton() {
-        System.out.println("Pause button is linked"); // Debugging statement
-
-        // Pause the current download
-        fileTransferManager.pauseDownload();
-
-        // Check the current download state
-        if (isDownloadPaused) {
-            // If the download is paused, resume it
-            fileTransferManager.resumeDownload();
-            isDownloadPaused = false;
+        System.out.println("Pause button is linked");
+        if (btnPauseDownload.getText().equals("Pause")) {
+            client.fileTransferManager.pauseDownload();
+            btnPauseDownload.setText("Resume");
         } else {
-            // If the download is in progress, pause it
-            fileTransferManager.pauseDownload();
-            isDownloadPaused = true;
+            client.fileTransferManager.resumeDownload();
+            btnPauseDownload.setText("Pause");
         }
     }
 

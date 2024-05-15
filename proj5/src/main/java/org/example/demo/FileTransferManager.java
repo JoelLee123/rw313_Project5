@@ -12,27 +12,36 @@ import javafx.scene.control.ProgressBar;
 public class FileTransferManager {
     private ExecutorService executorService; // To manage threads efficiently
     private volatile boolean pauseDownloadFlag = false; // Flag to control download pausing
+    private long downloadOffset = 0; // Variable to store the download offset
+    private boolean isDownloadPaused = false; // Variable to track if the download is paused
+
     private ProgressBar progressBar;
     private ChatGuiController chatGuiController;
     ServerController serverController;
     private int port;
 
+    private String serverAddress;
+    private int serverPort;
+    private String fileToDownload;
+    private String savePath;
+
     String uploadPath = System.getProperty("user.dir") + "/files/";
 
-    public FileTransferManager(ProgressBar progressBar) {
-
-        this.progressBar = progressBar;
+    public FileTransferManager() {
         executorService = Executors.newCachedThreadPool();
         startUploadServer();
     }
 
     public void resumeDownload() {
         pauseDownloadFlag = false;
+        isDownloadPaused = false;
+        resumeDownload(this.serverAddress, this.serverPort, this.fileToDownload, this.savePath);
     }
 
     public void pauseDownload() {
-        System.out.println("pusDownload() is called");
+        System.out.println("pauseDownload() is called");
         pauseDownloadFlag = true;
+        isDownloadPaused = true;
         Server.updateClientActivity("Download paused");
     }
 
@@ -66,6 +75,13 @@ public class FileTransferManager {
      */
     public void downloadFile(String serverAddress, int serverPort, String fileToDownload, String savePath,
             ProgressBar progressBar) {
+        // Save the parameters to instance variables
+        this.serverAddress = serverAddress;
+        this.serverPort = serverPort;
+        this.fileToDownload = fileToDownload;
+        this.savePath = savePath;
+        this.progressBar = progressBar;
+
         executorService.submit(() -> {
             try (Socket socket = new Socket(serverAddress, serverPort);
                     DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
@@ -84,9 +100,9 @@ public class FileTransferManager {
                 byte[] buffer = new byte[4096];
                 int read;
                 while ((read = dis.read(buffer)) > 0 && !pauseDownloadFlag) {
-                    System.out.println("here4");
                     fos.write(buffer, 0, read);
                     totalRead += read;
+                    downloadOffset = totalRead; // Update the offset
                     double progress = totalRead / (double) fileSize;
                     if (progressBar != null) {
                         Platform.runLater(() -> progressBar.setProgress(progress));
@@ -99,6 +115,9 @@ public class FileTransferManager {
                         Platform.runLater(() -> progressBar.setProgress(1.0)); // Complete the progress bar
                     }
                     Server.updateClientActivity("Download completed for file: " + fileToDownload);
+                } else if (pauseDownloadFlag) {
+                    System.out.println("Download paused at " + totalRead + " bytes.");
+                    Server.updateClientActivity("Download paused for file: " + fileToDownload);
                 }
             } catch (IOException e) {
                 System.out.println("Download error: " + e.getMessage());
@@ -107,9 +126,9 @@ public class FileTransferManager {
         });
     }
 
-    public void resumeDownload(String serverAddress, int serverPort, String fileToDownload, String savePath,
-            long offset) {
+    public void resumeDownload(String serverAddress, int serverPort, String fileToDownload, String savePath) {
         pauseDownloadFlag = false;
+        isDownloadPaused = false;
         executorService.submit(() -> {
             try (Socket socket = new Socket(serverAddress, serverPort);
                     DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
@@ -118,16 +137,17 @@ public class FileTransferManager {
 
                 dos.writeUTF(fileToDownload); // Send the file name to resume downloading
                 dos.writeUTF("RESUME"); // Indicate it's a resume request
-                dos.writeLong(offset); // Send the offset to resume from
+                dos.writeLong(downloadOffset); // Send the offset to resume from
 
-                raf.seek(offset); // Move the file pointer to the offset
+                raf.seek(downloadOffset); // Move the file pointer to the offset
                 long fileSize = dis.readLong(); // Read the remaining file size
-                long totalRead = offset;
+                long totalRead = downloadOffset;
                 byte[] buffer = new byte[4096];
                 int read;
                 while ((read = dis.read(buffer)) > 0 && !pauseDownloadFlag) {
                     raf.write(buffer, 0, read);
                     totalRead += read;
+                    downloadOffset = totalRead; // Update the offset
                     double progress = totalRead / (double) fileSize;
                     Platform.runLater(() -> progressBar.setProgress(progress));
                 }
@@ -193,7 +213,6 @@ public class FileTransferManager {
                             byte[] buffer = new byte[4096];
                             int read;
                             while ((read = fis.read(buffer)) > 0 && !pauseDownloadFlag) {
-                                System.out.println("here3");
                                 dos.write(buffer, 0, read);
                             }
                         }
@@ -205,7 +224,7 @@ public class FileTransferManager {
                 // Handle client disconnection gracefully
                 System.out.println("Client disconnected: " + e.getMessage());
             } catch (IOException e) {
-                System.out.println("Upload error: " + e.getMessage());
+                // System.out.println("Upload error: " + e.getMessage());
             } finally {
                 try {
                     clientSocket.close();
@@ -215,5 +234,4 @@ public class FileTransferManager {
             }
         });
     }
-
 }
