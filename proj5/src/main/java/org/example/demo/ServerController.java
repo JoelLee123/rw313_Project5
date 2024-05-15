@@ -1,8 +1,6 @@
 package org.example.demo;
-
 import javafx.fxml.FXML;
 import javafx.scene.control.TextArea;
-
 import java.io.File;
 
 /**
@@ -27,19 +25,28 @@ public class ServerController {
     public void appendClientActivity(String activity) {
         ClientActivityTA.appendText(activity + "\n");
     }
+/**
+ * Appends the names of files from a given array to a TextArea.
+ *
+ * @param files The array of files to be listed.
+ */
+public void appendFileList(File[] files) {
+    // Clear the existing content of the TextArea
+    ListOfFilesTA.clear();
 
-    public void appendFileList(File[] files) {
-
-        ListOfFilesTA.clear();
-
-        if (files != null) {
-            for (File file : files) {
-                if (file.isFile()) {
-                    ListOfFilesTA.appendText(file.getName() + "\n");
-                }
+    // Check if the input array is not null
+    if (files != null) {
+        // Iterate over each file in the array
+        for (File file : files) {
+            // Check if the current item is a file (not a directory)
+            if (file.isFile()) {
+                // Append the file name to the TextArea, followed by a newline character
+                ListOfFilesTA.appendText(file.getName() + "\n");
             }
-        } else {
-            ListOfFilesTA.appendText("No files found in the directory.");
         }
+    } else {
+        // If the input array is null, display a message in the TextArea
+        ListOfFilesTA.appendText("No files found in the directory.");
     }
+}
 }

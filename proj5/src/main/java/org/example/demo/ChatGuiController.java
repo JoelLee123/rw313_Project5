@@ -34,7 +34,7 @@ public class ChatGuiController extends Application {
      */
     public ChatGuiController() {
         // Default constructor is required for FXML loading
-        fileTransferManager = new FileTransferManager( downloadProgress);
+        fileTransferManager = new FileTransferManager(downloadProgress);
     }
 
     public FileTransferManager getFileTransferManager() {
@@ -68,14 +68,23 @@ public class ChatGuiController extends Application {
         this.client = client;
     }
 
-    /*public void setFileManager(FileTransferManager fileManager) {
-        this.fileTransferManager = fileManager;
-    } */
+    /*
+     * public void setFileManager(FileTransferManager fileManager) {
+     * this.fileTransferManager = fileManager;
+     * }
+     */
 
+    /**
+     * Initializes the controller and sets up event handlers and list cell
+     * formatting.
+     */
     public void initialize() {
+        // Set the event handler for the search button
         btnSearch.setOnAction(event -> handleSearchButton());
-        // Custom cell factory to format list cells
-        System.out.println("Search button was clicked");
+
+        System.out.println("Search button was clicked"); // Debugging statement
+
+        // Set a custom cell factory for the search results list view
         searchResultsListView.setCellFactory(new Callback<ListView<String>, ListCell<String>>() {
             @Override
             public ListCell<String> call(ListView<String> param) {
@@ -84,9 +93,9 @@ public class ChatGuiController extends Application {
                     protected void updateItem(String item, boolean empty) {
                         super.updateItem(item, empty);
                         if (item == null || empty) {
-                            setText(null);
+                            setText(null); // Clear the cell text if the item is null or empty
                         } else {
-                            setText(formatSearchResult(item));
+                            setText(formatSearchResult(item)); // Format the search result for display
                         }
                     }
                 };
@@ -94,18 +103,33 @@ public class ChatGuiController extends Application {
         });
     }
 
+    /**
+     * Handles the download button action.
+     * Sends a download request to the server for the selected search result.
+     */
     @FXML
     private void handleDownloadButton() {
-        System.out.println("Download button is called");
+        System.out.println("Download button is called"); // Debugging statement
+
+        // Get the selected item from the search results list view
         String selectedItem = searchResultsListView.getSelectionModel().getSelectedItem();
+
         if (selectedItem != null) {
-            System.out.println("selectedItem is not null");
-            // Send a download request to the server
+            System.out.println("selectedItem is not null"); // Debugging statement
+
+            // Create a new download request message
             Message downloadRequest = new Message("downloadRequest", username, username, selectedItem);
+
+            // Send the download request to the server
             client.sendMessage(downloadRequest);
         }
     }
 
+    /**
+     * Handles the search button action.
+     * Retrieves the search query from the input field, sends it to the server,
+     * and clears the input field.
+     */
     @FXML
     private void handleSearchButton() {
         String query = searchInput.getText().trim();
@@ -115,15 +139,25 @@ public class ChatGuiController extends Application {
         }
     }
 
+    /**
+     * Handles the pause button action.
+     * Pauses or resumes the file download process based on the current download
+     * state.
+     */
     @FXML
     private void handlePauseButton() {
-        System.out.println("Pause button is linked");
+        System.out.println("Pause button is linked"); // Debugging statement
+
+        // Pause the current download
         fileTransferManager.pauseDownload();
 
+        // Check the current download state
         if (isDownloadPaused) {
+            // If the download is paused, resume it
             fileTransferManager.resumeDownload();
             isDownloadPaused = false;
         } else {
+            // If the download is in progress, pause it
             fileTransferManager.pauseDownload();
             isDownloadPaused = true;
         }
