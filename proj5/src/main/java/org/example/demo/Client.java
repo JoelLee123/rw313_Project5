@@ -51,7 +51,7 @@ public class Client extends Application {
             this.serverAddress = serverAddress;
 
             // Send the username as a Message object to the server
-            sendMessage(new Message("login", username, null, null));
+            sendMessage(new Message("login", username, null, ""));
             listenForMessage();
         } catch (IOException e) {
             closeEverything(socket, objectInputStream, objectOutputStream);
